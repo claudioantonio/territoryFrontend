@@ -20,6 +20,13 @@ TODO
 
 ----
 
+Como executar?
+
+Faça o clone do repositório
+yarn start
+
+----
+
 Plano de releases
 
 V1
