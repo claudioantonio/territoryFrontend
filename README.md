@@ -20,9 +20,9 @@ TODO
 
 ----
 
-Como executar?
+Como executar o cliente?
 
-Faça o clone do repositório
+Faça o clone deste repositório
 yarn start
 
 ----
