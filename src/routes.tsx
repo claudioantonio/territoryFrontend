@@ -8,7 +8,7 @@ function Routes() {
     return (
         <BrowserRouter>
           <Route path="/" exact component={Register}></Route>
-          <Route path="/gameBoard/:myPlayerNumber/:myPlayerName" component={GameBoard}></Route>
+          <Route path="/gameBoard/:myPlayerNumber" component={GameBoard}></Route>
         </BrowserRouter>
     );
 }

@@ -18,7 +18,7 @@ function Register() {
       user,
     }).then(response => {
       let playerNumber = response.data.playerNumber;
-      history.push("/gameBoard/" + playerNumber + '/' + user);
+      history.push("/gameBoard/" + playerNumber);
     }).catch(()=>{
       alert("Type a name to play!");
     });

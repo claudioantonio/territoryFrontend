@@ -14,24 +14,22 @@ interface GameBoardParams {
 
 function GameBoard() {
   let { myPlayerNumber } = useParams<GameBoardParams>();
-  let myPlayerName:string;
-  let otherPlayerName:string;
+
+
+  const [myPlayerName,setMyPlayerName] = useState('');
+  const [otherPlayerName,setOtherPlayerName] = useState('');
 
 
   function fetchGameInfo() {
-    console.log('func aync');
     const response = api.get("gameinfo").then(response => {
-      console.log(response);
       if (Number(myPlayerNumber)==1) {
-        myPlayerName = response.data.player1;
-        otherPlayerName = response.data.player2;
+        setMyPlayerName(response.data.player1);
+        setOtherPlayerName(response.data.player2);
       } else {
-        otherPlayerName = response.data.player1;
-        myPlayerName = response.data.player2;
+        setOtherPlayerName(response.data.player1);
+        setMyPlayerName(response.data.player2);
       }
     })
-      
-    console.log('player2=' + otherPlayerName);
   }
   
 
