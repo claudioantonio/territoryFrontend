@@ -1,6 +1,6 @@
 Território
 
-O Jogo
+A história do jogo
 
 Conheci esse jogo na forma de uma brincadeira nos tempos de escola. Para brincar era necessário apenas uma folha de caderno e canetas de cores diferentes (você lembra da bic 4 cores?). :)
 
@@ -14,8 +14,33 @@ O jogo termina quando não houverem mais arestas a serem desenhadas no grid e o 
 
 ----
 
-A Implementação
+Como jogar esta implementação?
 
+TODO
 
 ----
 
+Plano de releases
+
+V1
+- Possibilitar 2 jogadores e uma fila de espera
+
+v2
+- Ranking
+
+v3
+- Possibilitar a definição de nível de dificuldade (grid size)
+
+v4
+- Possibilitar 4 jogadores simultâneamente
+
+v5
+- Possibilitar salas de jogo independentes com até 4 jogadores
+
+----
+
+Colaboração
+
+Gostou da ideia e quer bater um papo? Escreva para claudio.engdist@gmail.com.
+Merge requests serão muito bem-vindos!
+Se você quiser fazer um fork e desenvolver sua própria ideia a partir deste código, fique à vontade!
