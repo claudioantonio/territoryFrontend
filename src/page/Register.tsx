@@ -6,13 +6,14 @@ import '../assets/styles/index.css';
 
 function Register() {
   const [user,setUser] = useState('');
-
   const history = useHistory();
 
+  /**
+   * Submit action handler
+   * @param e Event
+   */
   const handleSubmit = (e:FormEvent) => {
     e.preventDefault();
-
-    // TODO Form validation
 
     api.post("register",{
       user,
@@ -24,6 +25,9 @@ function Register() {
     });
   }
 
+  /**
+   * Page content
+   */
   return (
     <div>
       <header>Territory - An old school game</header>

@@ -1,10 +1,8 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { useParams } from 'react-router-dom';
 import { render } from 'react-dom';
 import api from '../service/api';
 import socketIo from 'socket.io-client';
-
-import { Stage, Layer, Rect, Shape} from 'react-konva';
 
 import '../assets/styles/index.css';
 
@@ -12,13 +10,16 @@ interface GameBoardParams {
   myPlayerNumber: string;
 }
 
+/**
+ * GameBoard page
+ * Presents the grid where players will interact
+ */
 function GameBoard() {
   let { myPlayerNumber } = useParams<GameBoardParams>();
-
+  const canvasRef = useRef(null);
 
   const [myPlayerName,setMyPlayerName] = useState('');
   const [otherPlayerName,setOtherPlayerName] = useState('');
-
 
   function fetchGameInfo() {
     const response = api.get("gameinfo").then(response => {
@@ -42,20 +43,6 @@ function GameBoard() {
     //socket.emit('play', {user: user, play:play,});
   }
 
-  function onMouseClick(e:any){
-    const squareIdx = e.target.parent.attrs.id;
-    const sideIdx = e.target.attrs.id;
-    sendPlay(squareIdx,sideIdx);
-
-    paintSquareSide(e);
-  }
-
-  function paintSquareSide(e:any) {
-    e.target.attrs.fill='red';
-    e.target.cache();
-    e.target.getLayer().batchDraw();
-  }
-
   function sendPlay(squareIdx:number,sideIdx:number) {
     api.post("selection", {
         'square': squareIdx,
@@ -76,32 +63,52 @@ function GameBoard() {
     return name;
   }
 
+  function drawGrid(ctx:any, width:number, height:number, gridSize:number){
+    const PADDING = 10;
+    const maxX = width-PADDING;
+    const maxY = height-PADDING;
+    const boardWidth = width-(2*PADDING);
+    const boardHeight = height-(2*PADDING);
+    const gridXSpace = boardWidth/(gridSize-1);
+    const gridYSpace = boardHeight/(gridSize-1);
+
+    for (let x = PADDING; x <= maxX; x=x+gridXSpace) {
+      console.log('increment x=' + (x+gridXSpace) + ' boardWidth=' + maxX);
+      for (let y = PADDING; y <= maxY; y=y+gridYSpace) {
+        console.log('x=' + x + ' y=' + y);
+        console.log('increment y=' + (x+gridYSpace) + ' boardHeight=' + maxY);
+        ctx.beginPath();
+        ctx.arc(x,y,1,0,2*Math.PI);
+        ctx.stroke();
+    }
+  }
+}
+
+
+  useEffect(() => {
+    const canvasObj:any = canvasRef.current;
+    const canvasCtx = canvasObj.getContext("2d");
+    drawGrid(canvasCtx,320,240,4);
+  });
+
+  
   fetchGameInfo();
 
+  /**
+   * Normally in React you don’t need a ref to update something, 
+   * but the canvas is not like other DOM elements. Most DOM elements 
+   * have a property like value that you can update directly. 
+   * The canvas works with a context (ctx in our app) that allows you 
+   * to draw things. For that we have to use a ref, which is a 
+   * reference to the actual canvas DOM element.
+   * https://itnext.io/using-react-hooks-with-canvas-f188d6e416c0
+   */
   return (
     <div>
       <header>TESTE</header>
       <main>
         <div>
-          <Stage width={320} height={240}> 
-            <Layer id="0">
-            <Rect id="0" x={0} y={0} width={20} height={80} 
-                  stroke="black" fill="white" 
-                  onClick={onMouseClick}/>
-            <Rect id="1" x={20} y={0} 
-                  width={80} height={20} 
-                  stroke="black" fill="white" 
-                  onClick={onMouseClick}/>
-            <Rect id="2" x={80} y={20} 
-                  width={20} height={80} 
-                  stroke="black" fill="white" 
-                  onClick={onMouseClick}/>
-            <Rect id="3" x={0} y={80} 
-                  width={80} height={20} 
-                  stroke="black" fill="white" 
-                  onClick={onMouseClick}/>
-            </Layer>
-          </Stage>
+          <canvas id="boardgame" ref={canvasRef} width="320" height="240"></canvas>
         </div>
         <div>
           <strong>Player 1: {getPlayerName(1)}</strong>
