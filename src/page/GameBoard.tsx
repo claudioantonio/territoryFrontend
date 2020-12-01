@@ -97,6 +97,19 @@ function GameBoard() {
   }
 
   const gridColumns:any[] = [];
+  const gridRows:any[] = [];
+  const TOLERANCE:number = 0.001;
+
+  function isEqual(n1:number,n2:number) {
+    return (Math.abs(n1 -n2)<TOLERANCE) ? true : false;
+  }
+
+  function createRowItem(x:number,y:number) {
+    return {
+      'row': y,
+      'items': [x],
+    }
+  }
 
   function createColumnItem(x:number,y:number) {
     return {
@@ -105,28 +118,100 @@ function GameBoard() {
     }
   }
 
-  function updateColumnItem(columnItem:any, y:number) {
-    columnItem.items.push(y);
-  }
-
-  function storeGridColumns(x:number,y:number) {
-    for (let i = 0; x < gridColumns.length; i++) {
-      if (gridColumns[i].column == x) {
-        updateColumnItem(gridColumns[i],y);
+  function storeColumnInfo(x:number,y:number) {
+    for (let i = 0; i < gridColumns.length; i++) {
+      if (isEqual(gridColumns[i].column, x)) {
+        gridColumns[i].items.push(y);
         return;
       }
     }
-
     gridColumns.push(createColumnItem(x,y));
   }
 
+  function storeRowInfo(x:number,y:number) {
+    for (let j = 0; j < gridRows.length; j++) {
+      console.log("rowj=" + gridRows[j].row + " y=" + y + " equal=" + isEqual(gridRows[j].row,y));
+      if (isEqual(gridRows[j].row,y)) {
+        gridRows[j].items.push(x);
+        return;
+      }
+    }
+    gridRows.push(createRowItem(x,y));
+  }
+
+  function storeGridInfo(x:number,y:number) {
+    storeColumnInfo(x,y);
+    storeRowInfo(x,y);
+  }
+
+  function findAdjacentXPoints(gridInfo:any, x:number) {
+    for (let i = 0; i < gridInfo.items.length; i++) {
+      if (x < gridInfo.items[i]){
+        let side = {
+          x1: gridInfo.items[i-1],
+          y1: gridInfo.row,
+          x2: gridInfo.items[i],
+          y2: gridInfo.row,
+        }
+        console.log(side);
+        return side; 
+      }
+    }
+    return null;
+  }
+
+  function findAdjacentYPoints(gridInfo:any, y:number) {
+    for (let i = 0; i < gridInfo.items.length; i++) {
+      if (y < gridInfo.items[i]){
+        let side = {
+          x1: gridInfo.column,
+          y1: gridInfo.items[i-1],
+          x2: gridInfo.column,
+          y2: gridInfo.items[i],
+        }
+        console.log(side);
+        return side; 
+      }
+    }
+    return null;
+  }
+
+  function drawSide(canvasObj:any,side:any) {
+    const canvasCtx = canvasObj.getContext("2d");
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(side.x1,side.y1);
+    canvasCtx.lineTo(side.x2,side.y2);
+    canvasCtx.stroke();
+  }
+
+  function reachRow(canvasObj:any, x:number,y:number) {
+    console.log(gridRows);
+    gridRows.forEach(rowItem => {
+      const pos = getPos(canvasObj,x,y);
+      const tolerance = 2;
+      console.log("y=" + pos.y + " column=" + rowItem.row + " Diff=" + Math.abs(rowItem.row - pos.y));
+      if (Math.abs(rowItem.row - pos.y)<tolerance) {
+        console.log("ROW");
+        let side = findAdjacentXPoints(rowItem,pos.x);
+        if (side!=null) {
+          drawSide(canvasObj, side);
+        }
+      }
+    });
+  }
+
   function reachColumn(canvasObj:any, x:number,y:number) {
+    console.log(gridColumns);
     gridColumns.forEach(columnItem => {
       const pos = getPos(canvasObj,x,y);
-      const tolerance = 0.5;
+      const tolerance = 2;
       console.log("x=" + pos.x + " column=" + columnItem.column + " Diff=" + Math.abs(columnItem.column - pos.x));
       if (Math.abs(columnItem.column - pos.x)<tolerance) {
-        console.log("COLUMN!!!!!!!!!!!!!!");
+        console.log("Column");
+        let side = findAdjacentYPoints(columnItem,pos.y);
+        if (side!=null) {
+          drawSide(canvasObj, side);
+        }
       }
     });
   }
@@ -137,12 +222,8 @@ function GameBoard() {
    */
   function drawGrid(ctx:any){
     for (let x = PADDING; Math.trunc(x) <= maxX; x=x+gridXSpace) {
-      console.log("x==" + x);
-      console.log("nextx==" + (x+gridXSpace));
       for (let y = PADDING; y <= maxY; y=y+gridYSpace) {
-        console.log("y==" + y);
-        console.log("nexty==" + (y+gridYSpace));
-        storeGridColumns(x,y);
+        storeGridInfo(x,y);
         ctx.beginPath();
         ctx.arc(x,y,1,0,2*Math.PI);
         ctx.stroke();
@@ -155,6 +236,7 @@ function GameBoard() {
       const x = e.clientX;
       const y = e.clientY;
       reachColumn(canvasObj, x,y);
+      reachRow(canvasObj,x,y);
       console.log(gridColumns);
     });
   }
