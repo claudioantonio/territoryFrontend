@@ -63,32 +63,108 @@ function GameBoard() {
     return name;
   }
 
-  function drawGrid(ctx:any, width:number, height:number, gridSize:number){
-    const PADDING = 10;
-    const maxX = width-PADDING;
-    const maxY = height-PADDING;
-    const boardWidth = width-(2*PADDING);
-    const boardHeight = height-(2*PADDING);
-    const gridXSpace = boardWidth/(gridSize-1);
-    const gridYSpace = boardHeight/(gridSize-1);
+  const canvasWidth = 400;
+  const canvasHeight = 300;
+  const gridSize = 4;
+  const minX = 10;
+  const minY = 10;
+  const PADDING = 10;
+  const maxX = canvasWidth-PADDING;
+  const maxY = canvasHeight-PADDING;
+  const boardWidth = canvasWidth-(2*PADDING);
+  const boardHeight = canvasHeight-(2*PADDING);
+  const gridXSpace = boardWidth/(gridSize-1);
+  const gridYSpace = boardHeight/(gridSize-1);
 
-    for (let x = PADDING; x <= maxX; x=x+gridXSpace) {
-      console.log('increment x=' + (x+gridXSpace) + ' boardWidth=' + maxX);
+  function hasReachedLineGrid(x:number,y:number) {
+  }
+
+  function getPos(canvasObj:any, x:number, y:number) {
+    const rect = canvasObj.getBoundingClientRect();
+    const posX = x - rect.left;
+    const posY = y - rect.top;
+    return ({
+      x: posX,
+      y: posY,
+    });
+  }
+
+  function installMouseMoveListener(canvasObj:any){
+    canvasObj.addEventListener('mousemove', (e:MouseEvent) => {
+      const pos = getPos(canvasObj,e.clientX,e.clientY);
+      console.log("x=" + pos.x + " y=" + pos.y);
+    });
+  }
+
+  const gridColumns:any[] = [];
+
+  function createColumnItem(x:number,y:number) {
+    return {
+      'column': x,
+      'items': [y],
+    }
+  }
+
+  function updateColumnItem(columnItem:any, y:number) {
+    columnItem.items.push(y);
+  }
+
+  function storeGridColumns(x:number,y:number) {
+    for (let i = 0; x < gridColumns.length; i++) {
+      if (gridColumns[i].column == x) {
+        updateColumnItem(gridColumns[i],y);
+        return;
+      }
+    }
+
+    gridColumns.push(createColumnItem(x,y));
+  }
+
+  function reachColumn(canvasObj:any, x:number,y:number) {
+    gridColumns.forEach(columnItem => {
+      const pos = getPos(canvasObj,x,y);
+      const tolerance = 0.5;
+      console.log("x=" + pos.x + " column=" + columnItem.column + " Diff=" + Math.abs(columnItem.column - pos.x));
+      if (Math.abs(columnItem.column - pos.x)<tolerance) {
+        console.log("COLUMN!!!!!!!!!!!!!!");
+      }
+    });
+  }
+
+  /**
+   * Draw a grid of points
+   * @param ctx Canvas context
+   */
+  function drawGrid(ctx:any){
+    for (let x = PADDING; Math.trunc(x) <= maxX; x=x+gridXSpace) {
+      console.log("x==" + x);
+      console.log("nextx==" + (x+gridXSpace));
       for (let y = PADDING; y <= maxY; y=y+gridYSpace) {
-        console.log('x=' + x + ' y=' + y);
-        console.log('increment y=' + (x+gridYSpace) + ' boardHeight=' + maxY);
+        console.log("y==" + y);
+        console.log("nexty==" + (y+gridYSpace));
+        storeGridColumns(x,y);
         ctx.beginPath();
         ctx.arc(x,y,1,0,2*Math.PI);
         ctx.stroke();
+      }
     }
   }
-}
 
+  function installMouseClickListener(canvasObj:any) {
+    canvasObj.addEventListener('click', (e:MouseEvent) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      reachColumn(canvasObj, x,y);
+      console.log(gridColumns);
+    });
+  }
 
   useEffect(() => {
     const canvasObj:any = canvasRef.current;
     const canvasCtx = canvasObj.getContext("2d");
-    drawGrid(canvasCtx,320,240,4);
+    drawGrid(canvasCtx);
+    installMouseMoveListener(canvasObj);
+    installMouseClickListener(canvasObj);
   });
 
   
@@ -107,9 +183,13 @@ function GameBoard() {
     <div>
       <header>TESTE</header>
       <main>
-        <div>
-          <canvas id="boardgame" ref={canvasRef} width="320" height="240"></canvas>
-        </div>
+          <strong>space</strong>
+          <canvas 
+            id="boardgame" 
+            ref={canvasRef} 
+            width={canvasWidth}
+            height={canvasHeight}>
+          </canvas>
         <div>
           <strong>Player 1: {getPlayerName(1)}</strong>
           <strong>Player 2: {getPlayerName(2)}</strong>
