@@ -74,7 +74,7 @@ function GameBoard() {
 
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 4;
+  const gridSize = 2;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
@@ -247,15 +247,25 @@ function GameBoard() {
   }
 
   useEffect(() => {
-    const canvasObj:any = canvasRef.current;
-    const canvasCtx = canvasObj.getContext("2d");
-    drawGrid(canvasCtx);
-    installMouseMoveListener(canvasObj);
-    installMouseClickListener(canvasObj);
-  });
+    if (myPlayerName.length>0) {
+      const canvasObj:any = canvasRef.current;
+      const canvasCtx = canvasObj.getContext("2d");
+      drawGrid(canvasCtx);
+      installMouseMoveListener(canvasObj);
+      installMouseClickListener(canvasObj);  
+    }
+  },[myPlayerName]);
 
-  
-  fetchGameInfo();
+  /**
+   * Use the useEffect hook with an empty dependency array for 
+   * loading your function when the component mounts.
+   * If you don't pass any variable to the dependency array, 
+   * it will only get called on the first render exactly like 
+   * componentDidMount.
+   */
+  useEffect(() => {
+    fetchGameInfo();
+  },[]);
 
   /**
    * Normally in React you don’t need a ref to update something, 
