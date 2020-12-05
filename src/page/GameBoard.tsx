@@ -10,6 +10,13 @@ interface GameBoardParams {
   myPlayerNumber: string;
 }
 
+interface Edge {
+  x1:number;
+  y1:number;
+  x2:number;
+  y2:number;
+}
+
 /**
  * GameBoard page
  * Presents the grid where players will interact
@@ -43,10 +50,12 @@ function GameBoard() {
     //socket.emit('play', {user: user, play:play,});
   }
 
-  function sendPlay(squareIdx:number,sideIdx:number) {
+  function sendPlay(edge:Edge) {
     api.post("selection", {
-        'square': squareIdx,
-        'side': sideIdx,
+        'x1': edge.x1,
+        'y1': edge.y1,
+        'x2': edge.x2,
+        'y2': edge.y2,
         'player': myPlayerNumber,
     }).then(response => {
       console.log(response.data);
@@ -101,7 +110,7 @@ function GameBoard() {
   const TOLERANCE:number = 0.001;
 
   function isEqual(n1:number,n2:number) {
-    return (Math.abs(n1 -n2)<TOLERANCE) ? true : false;
+    return (Math.abs(n1-n2)<TOLERANCE) ? true : false;
   }
 
   function createRowItem(x:number,y:number) {
@@ -130,7 +139,6 @@ function GameBoard() {
 
   function storeRowInfo(x:number,y:number) {
     for (let j = 0; j < gridRows.length; j++) {
-      console.log("rowj=" + gridRows[j].row + " y=" + y + " equal=" + isEqual(gridRows[j].row,y));
       if (isEqual(gridRows[j].row,y)) {
         gridRows[j].items.push(x);
         return;
@@ -147,14 +155,14 @@ function GameBoard() {
   function findAdjacentXPoints(gridInfo:any, x:number) {
     for (let i = 0; i < gridInfo.items.length; i++) {
       if (x < gridInfo.items[i]){
-        let side = {
+        let edge:Edge = {
           x1: gridInfo.items[i-1],
           y1: gridInfo.row,
           x2: gridInfo.items[i],
           y2: gridInfo.row,
         }
-        console.log(side);
-        return side; 
+        console.log(edge);
+        return edge; 
       }
     }
     return null;
@@ -163,38 +171,38 @@ function GameBoard() {
   function findAdjacentYPoints(gridInfo:any, y:number) {
     for (let i = 0; i < gridInfo.items.length; i++) {
       if (y < gridInfo.items[i]){
-        let side = {
+        let edge:Edge = {
           x1: gridInfo.column,
           y1: gridInfo.items[i-1],
           x2: gridInfo.column,
           y2: gridInfo.items[i],
         }
-        console.log(side);
-        return side; 
+        console.log(edge);
+        return edge; 
       }
     }
     return null;
   }
 
-  function drawSide(canvasObj:any,side:any) {
+  function drawSide(canvasObj:any,edge:Edge) {
     const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
-    canvasCtx.moveTo(side.x1,side.y1);
-    canvasCtx.lineTo(side.x2,side.y2);
+    canvasCtx.moveTo(edge.x1,edge.y1);
+    canvasCtx.lineTo(edge.x2,edge.y2);
     canvasCtx.stroke();
   }
+
+  const PROXIMITY_TOLERANCE = 2;
 
   function reachRow(canvasObj:any, x:number,y:number) {
     console.log(gridRows);
     gridRows.forEach(rowItem => {
       const pos = getPos(canvasObj,x,y);
-      const tolerance = 2;
-      console.log("y=" + pos.y + " column=" + rowItem.row + " Diff=" + Math.abs(rowItem.row - pos.y));
-      if (Math.abs(rowItem.row - pos.y)<tolerance) {
-        console.log("ROW");
-        let side = findAdjacentXPoints(rowItem,pos.x);
-        if (side!=null) {
-          drawSide(canvasObj, side);
+      if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
+        let edge = findAdjacentXPoints(rowItem,pos.x);
+        if (edge!=null) {
+          drawSide(canvasObj, edge);
+          sendPlay(edge);
         }
       }
     });
@@ -204,13 +212,11 @@ function GameBoard() {
     console.log(gridColumns);
     gridColumns.forEach(columnItem => {
       const pos = getPos(canvasObj,x,y);
-      const tolerance = 2;
-      console.log("x=" + pos.x + " column=" + columnItem.column + " Diff=" + Math.abs(columnItem.column - pos.x));
-      if (Math.abs(columnItem.column - pos.x)<tolerance) {
-        console.log("Column");
-        let side = findAdjacentYPoints(columnItem,pos.y);
-        if (side!=null) {
-          drawSide(canvasObj, side);
+      if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
+        let edge = findAdjacentYPoints(columnItem,pos.y);
+        if (edge!=null) {
+          drawSide(canvasObj, edge);
+          sendPlay(edge);
         }
       }
     });
@@ -237,7 +243,6 @@ function GameBoard() {
       const y = e.clientY;
       reachColumn(canvasObj, x,y);
       reachRow(canvasObj,x,y);
-      console.log(gridColumns);
     });
   }
 
