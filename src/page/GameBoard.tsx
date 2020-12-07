@@ -26,11 +26,13 @@ function GameBoard() {
   const canvasRef = useRef(null);
 
   const [myPlayerName,setMyPlayerName] = useState('');
+  const [myScore,setMyScore] = useState('0');
   const [otherPlayerName,setOtherPlayerName] = useState('');
+  const [otherPlayerScore,setOtherPlayerScore] = useState('0');
 
   function fetchGameInfo() {
     const response = api.get("gameinfo").then(response => {
-      if (Number(myPlayerNumber)==1) {
+      if (iAmPlayer1()) {
         setMyPlayerName(response.data.player1);
         setOtherPlayerName(response.data.player2);
       } else {
@@ -41,13 +43,38 @@ function GameBoard() {
   }
   
 
-  //const socket = socketIo('ws://localhost:3333/');
-  //socket.on('connect', () => {
-  //  console.log('Client connected');
-  //});
+  function connectSocket() {
+    const socket = socketIo('ws://localhost:3333/');
+    socket.on('connect', () => {
+      console.log('Client connected');
+    });
 
-  function SendPlay() {
-    //socket.emit('play', {user: user, play:play,});
+    socket.on('gameUpdate', (response:any) => {
+      const canvasObj:any = canvasRef.current;
+      let serverEdge = response.lastPlay;
+      let clientEdge = {
+        x1: serverEdge.initialPoint.x,
+        y1: serverEdge.initialPoint.y,
+        x2: serverEdge.endPoint.x,
+        y2: serverEdge.endPoint.y,
+      }
+      drawSide(canvasObj, clientEdge);
+      updateScore(response.score_player1,response.score_player2);
+    });
+
+    // CLEAN UP THE EFFECT
+    return () => socket.disconnect();
+    //
+  }
+
+  function updateScore(scorep1:string,scorep2:string) {
+    if (iAmPlayer1()) {
+      setMyScore(scorep1);
+      setOtherPlayerScore(scorep2);
+    } else {
+      setMyScore(scorep2);
+      setOtherPlayerScore(scorep1);        
+    }
   }
 
   function sendPlay(edge:Edge) {
@@ -58,18 +85,25 @@ function GameBoard() {
         'y2': edge.y2,
         'player': myPlayerNumber,
     }).then(response => {
-      console.log(response.data);
+      let scorep1 = response.data.score_player1;
+      let scorep2 = response.data.score_player2;
+      updateScore(scorep1,scorep2);
     }).catch(()=>{
       alert("Error selecting a side");
     });
 
   }
 
+  function iAmPlayer1() {
+    return (Number(myPlayerNumber)==1)? true : false;
+  }
+
   function getPlayerName(playerNumber:number) {
-    console.log('test=' + (Number(myPlayerNumber)==playerNumber));
-    let name = (Number(myPlayerNumber)==playerNumber)? myPlayerName : otherPlayerName;
-    console.log(name);
-    return name;
+    return (Number(myPlayerNumber)==playerNumber)? myPlayerName : otherPlayerName;
+  }
+
+  function getPlayerScore(playerNumber:number) {
+    return (Number(myPlayerNumber)==playerNumber)? myScore : otherPlayerScore;
   }
 
   const canvasWidth = 400;
@@ -85,9 +119,6 @@ function GameBoard() {
   const gridXSpace = boardWidth/(gridSize-1);
   const gridYSpace = boardHeight/(gridSize-1);
 
-  function hasReachedLineGrid(x:number,y:number) {
-  }
-
   function getPos(canvasObj:any, x:number, y:number) {
     const rect = canvasObj.getBoundingClientRect();
     const posX = x - rect.left;
@@ -101,7 +132,6 @@ function GameBoard() {
   function installMouseMoveListener(canvasObj:any){
     canvasObj.addEventListener('mousemove', (e:MouseEvent) => {
       const pos = getPos(canvasObj,e.clientX,e.clientY);
-      console.log("x=" + pos.x + " y=" + pos.y);
     });
   }
 
@@ -264,6 +294,7 @@ function GameBoard() {
    * componentDidMount.
    */
   useEffect(() => {
+    connectSocket();
     fetchGameInfo();
   },[]);
 
@@ -288,8 +319,9 @@ function GameBoard() {
             height={canvasHeight}>
           </canvas>
         <div>
-          <strong>Player 1: {getPlayerName(1)}</strong>
-          <strong>Player 2: {getPlayerName(2)}</strong>
+          <strong>|{getPlayerName(1)}: {getPlayerScore(1)}</strong>
+          <strong>{"|<--->|"}</strong>
+          <strong>{getPlayerName(2)}: {getPlayerScore(2)} |</strong>
         </div>
       </main>
       <footer>Fork freely from https://github.com/claudioantonio</footer>
