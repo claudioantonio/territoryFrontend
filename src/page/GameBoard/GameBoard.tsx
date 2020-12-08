@@ -222,6 +222,7 @@ function GameBoard() {
   function updateCanvas(canvasObj:any,edge:Edge) {
     const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
+    canvasCtx.lineWidth = "3";
     canvasCtx.moveTo(edge.x1,edge.y1);
     canvasCtx.lineTo(edge.x2,edge.y2);
     canvasCtx.stroke();
@@ -278,7 +279,9 @@ function GameBoard() {
         for (let y = minY; y <= maxY; y=y+gridYSpace) {
           storeGridInfo(x,y);
           ctx.beginPath();
-          ctx.arc(x,y,1,0,2*Math.PI);
+          ctx.arc(x,y,5,0,2*Math.PI);
+          ctx.fillStyle = "black";
+          ctx.fill();
           ctx.stroke();
         }
       } 
