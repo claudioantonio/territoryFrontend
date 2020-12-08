@@ -44,7 +44,7 @@ function GameBoard() {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3333';
 
   function connectSocket() {
-    const socket = socketIo('API_URL');
+    const socket = socketIo(API_URL);
     socket.on('connect', () => {
       console.log('Client connected');
     });
