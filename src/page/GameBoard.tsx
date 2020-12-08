@@ -1,6 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
 import { useParams } from 'react-router-dom';
-import { render } from 'react-dom';
 import api from '../service/api';
 import socketIo from 'socket.io-client';
 
@@ -31,7 +30,7 @@ function GameBoard() {
   const [otherPlayerScore,setOtherPlayerScore] = useState('0');
 
   function fetchGameInfo() {
-    const response = api.get("gameinfo").then(response => {
+    api.get("gameinfo").then(response => {
       if (iAmPlayer1()) {
         setMyPlayerName(response.data.player1);
         setOtherPlayerName(response.data.player2);
@@ -95,15 +94,15 @@ function GameBoard() {
   }
 
   function iAmPlayer1() {
-    return (Number(myPlayerNumber)==1)? true : false;
+    return (Number(myPlayerNumber)===1)? true : false;
   }
 
   function getPlayerName(playerNumber:number) {
-    return (Number(myPlayerNumber)==playerNumber)? myPlayerName : otherPlayerName;
+    return (Number(myPlayerNumber)===playerNumber)? myPlayerName : otherPlayerName;
   }
 
   function getPlayerScore(playerNumber:number) {
-    return (Number(myPlayerNumber)==playerNumber)? myScore : otherPlayerScore;
+    return (Number(myPlayerNumber)===playerNumber)? myScore : otherPlayerScore;
   }
 
   const canvasWidth = 400;
@@ -131,7 +130,7 @@ function GameBoard() {
 
   function installMouseMoveListener(canvasObj:any){
     canvasObj.addEventListener('mousemove', (e:MouseEvent) => {
-      const pos = getPos(canvasObj,e.clientX,e.clientY);
+      getPos(canvasObj,e.clientX,e.clientY);
     });
   }
 
@@ -252,20 +251,7 @@ function GameBoard() {
     });
   }
 
-  /**
-   * Draw a grid of points
-   * @param ctx Canvas context
-   */
-  function drawGrid(ctx:any){
-    for (let x = PADDING; Math.trunc(x) <= maxX; x=x+gridXSpace) {
-      for (let y = PADDING; y <= maxY; y=y+gridYSpace) {
-        storeGridInfo(x,y);
-        ctx.beginPath();
-        ctx.arc(x,y,1,0,2*Math.PI);
-        ctx.stroke();
-      }
-    }
-  }
+  
 
   function installMouseClickListener(canvasObj:any) {
     canvasObj.addEventListener('click', (e:MouseEvent) => {
@@ -277,6 +263,22 @@ function GameBoard() {
   }
 
   useEffect(() => {
+    /**
+    * Draw a grid of points
+    * @param ctx Canvas context
+    */
+    function drawGrid(ctx:any){
+      for (let x = minX; Math.trunc(x) <= maxX; x=x+gridXSpace) {
+        for (let y = minY; y <= maxY; y=y+gridYSpace) {
+          storeGridInfo(x,y);
+          ctx.beginPath();
+          ctx.arc(x,y,1,0,2*Math.PI);
+          ctx.stroke();
+        }
+      } 
+    }
+
+    
     if (myPlayerName.length>0) {
       const canvasObj:any = canvasRef.current;
       const canvasCtx = canvasObj.getContext("2d");
