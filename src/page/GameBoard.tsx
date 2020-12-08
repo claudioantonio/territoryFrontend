@@ -113,7 +113,7 @@ function GameBoard() {
 
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 3;
+  const gridSize = 4;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
