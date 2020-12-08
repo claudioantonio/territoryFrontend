@@ -1,6 +1,6 @@
 Território
 
-A história do jogo
+O jogo
 
 Conheci esse jogo na forma de uma brincadeira nos tempos de escola. Para brincar era necessário apenas uma folha de caderno e canetas de cores diferentes (você lembra da bic 4 cores?). :)
 
@@ -16,7 +16,11 @@ O jogo termina quando não houverem mais arestas a serem desenhadas no grid e o 
 
 Como jogar esta implementação?
 
-TODO
+1. Convide alguém para jogar com você (ou abra duas janelas do browser)
+2. Entre com um apelido para identificação e clique no botão Play
+3. Será exibida uma grade de pontos onde cada jogador, um após o outro, deverá clicar no espaço (horizontal ou vertical) entre os pontos adjacentes que deseja ligar.
+4. O objetivo do jogo é ligar os pontos adjacentes e fechar quadrados.
+5. O jogo termina quando não houverem mais pontos para serem ligados e o vencedor é aquele que conseguiu fechar mais quadrados. 
 
 ----
 
