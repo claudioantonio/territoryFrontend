@@ -50,6 +50,8 @@ function GameBoard() {
     });
 
     socket.on('gameUpdate', (response:any) => {
+      console.log(response);
+
       const canvasObj:any = canvasRef.current;
       let serverEdge = response.lastPlay;
       let clientEdge = {
@@ -58,13 +60,20 @@ function GameBoard() {
         x2: serverEdge.endPoint.x,
         y2: serverEdge.endPoint.y,
       }
-      drawSide(canvasObj, clientEdge);
+      updateCanvas(canvasObj, clientEdge);
       updateScore(response.score_player1,response.score_player2);
+      if (response.gameOver) {
+        showGameOverMessage(response.message);
+      }
     });
 
     // CLEAN UP THE EFFECT
     return () => socket.disconnect();
     //
+  }
+
+  function showGameOverMessage(msg:string) {
+    window.alert(msg);
   }
 
   function updateScore(scorep1:string,scorep2:string) {
@@ -84,10 +93,6 @@ function GameBoard() {
         'x2': edge.x2,
         'y2': edge.y2,
         'player': myPlayerNumber,
-    }).then(response => {
-      let scorep1 = response.data.score_player1;
-      let scorep2 = response.data.score_player2;
-      updateScore(scorep1,scorep2);
     }).catch(()=>{
       alert("Error selecting a side");
     });
@@ -214,7 +219,7 @@ function GameBoard() {
     return null;
   }
 
-  function drawSide(canvasObj:any,edge:Edge) {
+  function updateCanvas(canvasObj:any,edge:Edge) {
     const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
     canvasCtx.moveTo(edge.x1,edge.y1);
@@ -231,7 +236,7 @@ function GameBoard() {
       if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentXPoints(rowItem,pos.x);
         if (edge!=null) {
-          drawSide(canvasObj, edge);
+          updateCanvas(canvasObj, edge);
           sendPlay(edge);
         }
       }
@@ -245,7 +250,7 @@ function GameBoard() {
       if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentYPoints(columnItem,pos.y);
         if (edge!=null) {
-          drawSide(canvasObj, edge);
+          updateCanvas(canvasObj, edge);
           sendPlay(edge);
         }
       }
