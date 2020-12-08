@@ -1,9 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../service/api';
+import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
-import '../assets/styles/index.css';
+import './GameBoard.css';
 
 interface GameBoardParams {
   myPlayerNumber: string;

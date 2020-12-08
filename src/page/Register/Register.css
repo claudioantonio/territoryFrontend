@@ -1,0 +1,49 @@
+body {
+    font-family: "Poppins", sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-size: 1.5rem;
+    background-color: #eeeeee;
+}
+
+.form__field {
+    font-family: inherit;
+    width: 90%;
+    border: 0;
+    border-bottom: 2px solid #9b9b9b;
+    outline: 0;
+    font-size: 1.5rem;
+    color: #9b9b9b;
+    padding: 7px 0;
+    background: transparent;
+    transition: border-color 0.2s;
+  }
+
+  .form__field::placeholder {
+    color: transparent;
+  }
+
+.input-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+a {
+    font-size: 1.2rem;
+    text-decoration: none;
+    color: #222222;
+}
+
+button {
+    max-width: 5rem;
+    min-width: 5rem;
+    height: 3rem;
+    border-radius: 0.8rem;
+    font-size: 1.5rem;
+    
+    color: #222;
+}

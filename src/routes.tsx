@@ -1,8 +1,8 @@
 import React from 'react';
 import {BrowserRouter,Route} from 'react-router-dom';
 
-import Register from './page/Register';
-import GameBoard from './page/GameBoard';
+import Register from './page/Register/Register';
+import GameBoard from './page/GameBoard/GameBoard';
 
 function Routes() {
     return (

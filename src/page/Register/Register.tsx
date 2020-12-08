@@ -1,11 +1,11 @@
 import React, { FormEvent, useState } from 'react';
 import {useHistory} from 'react-router-dom';
-import api from '../service/api';
-import '../assets/styles/index.css';
+import api from '../../service/api';
+import './Register.css';
 
 
 function Register() {
-  const [user,setUser] = useState('');
+  const [user,setUser] = useState('Enter a nickname');
   const history = useHistory();
 
   /**
@@ -14,6 +14,8 @@ function Register() {
    */
   const handleSubmit = (e:FormEvent) => {
     e.preventDefault();
+
+    if (isFormFieldValid()==false) return;
 
     api.post("register",{
       user,
@@ -25,17 +27,32 @@ function Register() {
     });
   }
 
+  function isFormFieldValid() { 
+    return (user.length>0)? true : false;  
+  }
+
   /**
    * Page content
    */
   return (
     <div>
-      <header>Territory - An old school game</header>
+      <header>
+        <h1>Territory</h1>
+        <h3>An old school game</h3>
+      </header>
       <main>
         <form onSubmit={handleSubmit}>
-          <p>Enter a nickname:</p>
-           <input name="user" value={user} onChange={(e) => {setUser(e.target.value);}}/>
-           <button type="submit">Play</button>
+          <div className="input-container">
+            <input
+                name="user"
+                placeholder="Enter a nickname"
+                className="form__field"
+                value={user} 
+                onClick={(e) => {setUser("");}}
+                onChange={(e) => {setUser(e.target.value);}}
+              />
+            <button type="submit">Play</button>
+          </div>
         </form>
       </main>
       <footer>
