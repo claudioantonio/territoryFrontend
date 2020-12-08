@@ -113,7 +113,7 @@ function GameBoard() {
 
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 2;
+  const gridSize = 3;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
@@ -227,7 +227,7 @@ function GameBoard() {
     canvasCtx.stroke();
   }
 
-  const PROXIMITY_TOLERANCE = 2;
+  const PROXIMITY_TOLERANCE = 5;
 
   function reachRow(canvasObj:any, x:number,y:number) {
     console.log(gridRows);
