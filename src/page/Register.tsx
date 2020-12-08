@@ -33,13 +33,13 @@ function Register() {
       <header>Territory - An old school game</header>
       <main>
         <form onSubmit={handleSubmit}>
+          <p>Enter a nickname:</p>
            <input name="user" value={user} onChange={(e) => {setUser(e.target.value);}}/>
            <button type="submit">Play</button>
         </form>
       </main>
       <footer>
-        <a href="">Game</a>
-        <a href="">How to play</a>
+        <p><a href="https://github.com/claudioantonio/territoryFrontend">About the game</a></p>
       </footer>
     </div>
   );
