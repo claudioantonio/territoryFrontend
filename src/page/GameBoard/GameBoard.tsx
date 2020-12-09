@@ -60,7 +60,12 @@ function GameBoard() {
         x2: serverEdge.endPoint.x,
         y2: serverEdge.endPoint.y,
       }
-      updateCanvas(canvasObj, clientEdge);
+      // Será a minha vez de jogar então recebi o evento do outro jogador
+      if (response.turn=="0") {
+        updateCanvas(canvasObj, clientEdge, 2);
+      } else {
+        updateCanvas(canvasObj, clientEdge, 1);
+      }
       updateScore(response.score_player1,response.score_player2);
       if (response.gameOver) {
         showGameOverMessage(response.message);
@@ -219,10 +224,15 @@ function GameBoard() {
     return null;
   }
 
-  function updateCanvas(canvasObj:any,edge:Edge) {
+  function getPlayerColor(playerId:number) {
+    return playerId==1? "#0077c2" : "#790e8b";
+  }
+
+  function updateCanvas(canvasObj:any,edge:Edge, playerId: number) {
     const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
-    canvasCtx.lineWidth = "3";
+    canvasCtx.lineWidth = "4";
+    canvasCtx.strokeStyle = getPlayerColor(playerId);
     canvasCtx.moveTo(edge.x1,edge.y1);
     canvasCtx.lineTo(edge.x2,edge.y2);
     canvasCtx.stroke();
@@ -237,7 +247,7 @@ function GameBoard() {
       if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentXPoints(rowItem,pos.x);
         if (edge!=null) {
-          updateCanvas(canvasObj, edge);
+          //updateCanvas(canvasObj, edge, Number(myPlayerNumber));
           sendPlay(edge);
         }
       }
@@ -251,7 +261,7 @@ function GameBoard() {
       if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentYPoints(columnItem,pos.y);
         if (edge!=null) {
-          updateCanvas(canvasObj, edge);
+          //updateCanvas(canvasObj, edge, Number(myPlayerNumber));
           sendPlay(edge);
         }
       }
@@ -320,22 +330,31 @@ function GameBoard() {
    */
   return (
     <div>
-      <header>TESTE</header>
-      <main>
-          <strong>space</strong>
+      <header>
+        <h1>Territory</h1>
+      </header>
+      <main className="main-container">
+        <div>
           <canvas 
             id="boardgame" 
             ref={canvasRef} 
             width={canvasWidth}
             height={canvasHeight}>
           </canvas>
-        <div>
-          <strong>|{getPlayerName(1)}: {getPlayerScore(1)}</strong>
-          <strong>{"|<--->|"}</strong>
-          <strong>{getPlayerName(2)}: {getPlayerScore(2)} |</strong>
+
+          <div className="score-container">
+            <div className="player1-container">
+              <h3 className="player1-title">Player 1</h3>
+              <strong>{getPlayerName(1)}: {getPlayerScore(1)}</strong>
+            </div>
+            <div className="player2-container">
+              <h3 className="player2-title">Player 2</h3>
+              <strong>{getPlayerName(2)}: {getPlayerScore(2)}</strong>
+            </div>
+          </div>
         </div>
       </main>
-      <footer>Fork freely from https://github.com/claudioantonio</footer>
+      <footer><h5>Fork freely from <a href="https://github.com/claudioantonio/territoryFrontend">github</a></h5></footer>
     </div>
   );
 }
