@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
+import Score from '../../component/Score/Score';
+
 import './GameBoard.css';
 
 interface GameBoardParams {
@@ -22,15 +24,20 @@ interface Edge {
  */
 function GameBoard() {
   let { myPlayerNumber } = useParams<GameBoardParams>();
-  const canvasRef = useRef(null);
 
   const [myPlayerName,setMyPlayerName] = useState('');
   const [myScore,setMyScore] = useState('0');
   const [otherPlayerName,setOtherPlayerName] = useState('');
   const [otherPlayerScore,setOtherPlayerScore] = useState('0');
+  const [turn,setTurn] = useState('');
+  const canvasRef = useRef(null);
 
   function fetchGameInfo() {
     api.get("gameinfo").then(response => {
+      console.log("GameBoard.fetchGameInfo: before setturn=" + turn + " response=" + response.data.turn);
+      setTurn(response.data.turn);
+      console.log("GameBoard.fetchGameInfo: after setturn=" + turn);
+      
       if (iAmPlayer1()) {
         setMyPlayerName(response.data.player1);
         setOtherPlayerName(response.data.player2);
@@ -60,8 +67,13 @@ function GameBoard() {
         x2: serverEdge.endPoint.x,
         y2: serverEdge.endPoint.y,
       }
+
+      console.log("GameBoard: before setturn=" + turn + " response=" + response.turn);
+      setTurn(response.turn);
+      console.log("GameBoard: after setturn=" + turn);
+
       // Será a minha vez de jogar então recebi o evento do outro jogador
-      if (response.turn=="0") {
+      if (turn=="0") {
         updateCanvas(canvasObj, clientEdge, 2);
       } else {
         updateCanvas(canvasObj, clientEdge, 1);
@@ -268,16 +280,29 @@ function GameBoard() {
     });
   }
 
-  
+  function isMyTurn(turn:number) {
+    console.log("GameBoard: Turn=" + turn + " MyId=" + myPlayerNumber);
+    return ((turn+1)==Number(myPlayerNumber))? true : false; 
+  }
 
-  function installMouseClickListener(canvasObj:any) {
-    canvasObj.addEventListener('click', (e:MouseEvent) => {
+  function installMouseClickListener(canvasObj:any, turn:number) {
+    canvasObj.addEventListener('click', (e:MouseEvent, turn:number) => {
+      if (!isMyTurn(turn)) return;
+
       const x = e.clientX;
       const y = e.clientY;
       reachColumn(canvasObj, x,y);
       reachRow(canvasObj,x,y);
     });
   }
+
+  useEffect(() => {
+    console.log("useEffect turn: Turn=" + turn);
+    const canvasObj:any = canvasRef.current;
+    const canvasCtx = canvasObj.getContext("2d");
+    installMouseMoveListener(canvasObj);
+    installMouseClickListener(canvasObj,Number(turn));  
+  },[turn]);
 
   useEffect(() => {
     /**
@@ -297,13 +322,10 @@ function GameBoard() {
       } 
     }
 
-
     if (myPlayerName.length>0) {
       const canvasObj:any = canvasRef.current;
       const canvasCtx = canvasObj.getContext("2d");
       drawGrid(canvasCtx);
-      installMouseMoveListener(canvasObj);
-      installMouseClickListener(canvasObj);  
     }
   },[myPlayerName]);
 
@@ -342,16 +364,12 @@ function GameBoard() {
             height={canvasHeight}>
           </canvas>
 
-          <div className="score-container">
-            <div className="player1-container">
-              <h3 className="player1-title">Player 1</h3>
-              <strong>{getPlayerName(1)}: {getPlayerScore(1)}</strong>
-            </div>
-            <div className="player2-container">
-              <h3 className="player2-title">Player 2</h3>
-              <strong>{getPlayerName(2)}: {getPlayerScore(2)}</strong>
-            </div>
-          </div>
+          <Score
+            player1name={getPlayerName(1)}
+            player1score={getPlayerScore(1)}
+            player2name={getPlayerName(2)}
+            player2score={getPlayerScore(2)}
+          ></Score>
         </div>
       </main>
       <footer><h5>Fork freely from <a href="https://github.com/claudioantonio/territoryFrontend">github</a></h5></footer>
