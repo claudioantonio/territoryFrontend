@@ -1,9 +1,11 @@
-import React, { FormEvent, useState } from 'react';
+import React, { FormEvent, useEffect, useState } from 'react';
 import {useHistory} from 'react-router-dom';
 import api from '../../service/api';
 import './Register.css';
 
-
+/**
+ * Page to register a new player
+ */
 function Register() {
   const [user,setUser] = useState('Enter a nickname');
   const history = useHistory();
@@ -20,13 +22,23 @@ function Register() {
     api.post("register",{
       user,
     }).then(response => {
-      let playerNumber = response.data.playerNumber;
-      history.push("/gameBoard/" + playerNumber);
+      const playerId = response.data.playerId;
+      const roomPass = response.data.roomPass;
+      if (roomPass=='WaitingRoom') {
+        history.push("/waitingRoom/" + playerId);
+      } else if (roomPass=="GameRoom") {
+        history.push("/gameBoard/" + playerId);
+      } else {
+        throw new Error("Register: Invalid room pass =" + roomPass);
+      }
     }).catch(()=>{
-      alert("Type a name to play!");
+      alert("Error registering Your nickname! :-(");
     });
   }
 
+  /**
+   * Check if a valid nickname was provided
+   */
   function isFormFieldValid() { 
     return (user.length>0)? true : false;  
   }
