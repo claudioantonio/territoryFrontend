@@ -8,7 +8,7 @@ import Score from '../../component/Score/Score';
 import './GameBoard.css';
 
 interface GameBoardParams {
-  myPlayerNumber: string;
+  playerId: string;
 }
 
 interface Edge {
@@ -18,38 +18,65 @@ interface Edge {
   y2:number;
 }
 
-
-
 /**
  * GameBoard page
  * Presents the grid where players will interact
  */
 function GameBoard() {
-  let { myPlayerNumber } = useParams<GameBoardParams>();
+  let { playerId } = useParams<GameBoardParams>();
+  const myPlayerId = playerId;
 
-  const [myPlayerName,setMyPlayerName] = useState('');
-  const [myScore,setMyScore] = useState('0');
-  const [otherPlayerName,setOtherPlayerName] = useState('');
-  const [otherPlayerScore,setOtherPlayerScore] = useState('0');
-  const [turn,setTurn] = useState('');
+  const [player1Name,setPlayer1Name] = useState('');
+  const [player1Score,setPlayer1Score] = useState('0');
+  const [player2Name,setPlayer2Name] = useState('');
+  const [player2Score,setPlayer2Score] = useState('0');
+
   const canvasRef = useRef(null);
+  const player1Color = "#0077c2";
+  const player2Color = "#790e8b";
 
+  // Player Id for the current play
+  let currentTurn:number;
+
+  /**
+   * =============================================================
+   * REST Stuff
+   */
   function fetchGameInfo() {
     api.get("gameinfo").then(response => {
-      console.log("GameBoard.fetchGameInfo: before setturn=" + turn + " response=" + response.data.turn);
-      setTurn(response.data.turn);
-      console.log("GameBoard.fetchGameInfo: after setturn=" + turn);
-      
-      if (iAmPlayer1()) {
-        setMyPlayerName(response.data.player1);
-        setOtherPlayerName(response.data.player2);
+      currentTurn = response.data.turn;
+      console.log('GameInfo: current=' + currentTurn);
+      if (isMyTurn()) {
+        installMouseClickListener();
       } else {
-        setOtherPlayerName(response.data.player1);
-        setMyPlayerName(response.data.player2);
+        uninstallMouseClickListener();
       }
+    
+      setPlayer1Name(response.data.player1);
+      setPlayer2Name(response.data.player2);
     })
   }
+
+  function sendPlay(screenEdge:Edge) {
+    const gridEdge = convertScreenToGrid(screenEdge);
+    api.post("selection", {
+        'x1': gridEdge.x1,
+        'y1': gridEdge.y1,
+        'x2': gridEdge.x2,
+        'y2': gridEdge.y2,
+        'player': myPlayerId,
+    }).catch(()=>{
+      alert("Error selecting a side");
+    });
+  }
+  //==============================================================
+
   
+
+  /**
+   * ===========================================================
+   * Socket stuff
+   */
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3333';
 
   function connectSocket() {
@@ -62,6 +89,9 @@ function GameBoard() {
       console.log(response);
 
       const canvasObj:any = canvasRef.current;
+
+      let player1Id:number = Number(response.player1Id);
+
       let serverEdge = response.lastPlay;
       let clientEdge = {
         x1: serverEdge.initialPoint.x,
@@ -70,18 +100,24 @@ function GameBoard() {
         y2: serverEdge.endPoint.y,
       }
 
-      console.log("GameBoard: before setturn=" + turn + " response=" + response.turn);
-      setTurn(response.turn);
-      console.log("GameBoard: after setturn=" + turn);
-
-      // Será a minha vez de jogar então recebi o evento do outro jogador
-      if (turn=="0") {
-        updateCanvas(canvasObj, clientEdge, 2);
+      currentTurn = response.turn;
+      if (isMyTurn()) {
+        // Received other player play message
+        if (Number(myPlayerId)==player1Id) {
+          updateCanvas(canvasObj, clientEdge, player2Color);
+        } else {
+          updateCanvas(canvasObj, clientEdge, player1Color);
+        }        
       } else {
-        updateCanvas(canvasObj, clientEdge, 1);
+        // Received my own play message
+        if (Number(myPlayerId)==player1Id) {
+          updateCanvas(canvasObj, clientEdge, player1Color);
+        } else {
+          updateCanvas(canvasObj, clientEdge, player2Color);
+        }
       }
       updateScore(response.score_player1,response.score_player2);
-      if (response.gameOver) {
+      if (response.gameStatus) {
         showGameOverMessage(response.message);
       }
     });
@@ -90,46 +126,14 @@ function GameBoard() {
     return () => socket.disconnect();
     //
   }
+  /**
+   * ==========================================================
+   */
 
-  function showGameOverMessage(msg:string) {
-    window.alert(msg);
-  }
-
-  function updateScore(scorep1:string,scorep2:string) {
-    if (iAmPlayer1()) {
-      setMyScore(scorep1);
-      setOtherPlayerScore(scorep2);
-    } else {
-      setMyScore(scorep2);
-      setOtherPlayerScore(scorep1);        
-    }
-  }
-
-  function sendPlay(edge:Edge) {
-    api.post("selection", {
-        'x1': edge.x1,
-        'y1': edge.y1,
-        'x2': edge.x2,
-        'y2': edge.y2,
-        'player': myPlayerNumber,
-    }).catch(()=>{
-      alert("Error selecting a side");
-    });
-
-  }
-
-  function iAmPlayer1() {
-    return (Number(myPlayerNumber)===1)? true : false;
-  }
-
-  function getPlayerName(playerNumber:number) {
-    return (Number(myPlayerNumber)===playerNumber)? myPlayerName : otherPlayerName;
-  }
-
-  function getPlayerScore(playerNumber:number) {
-    return (Number(myPlayerNumber)===playerNumber)? myScore : otherPlayerScore;
-  }
-
+   /**
+    * =========================================================
+    *  Canvas Stuff
+    */
   const canvasWidth = 400;
   const canvasHeight = 300;
   const gridSize = 4;
@@ -143,6 +147,15 @@ function GameBoard() {
   const gridXSpace = boardWidth/(gridSize-1);
   const gridYSpace = boardHeight/(gridSize-1);
 
+  function getCanvasObj() {
+    return canvasRef.current;
+  }
+
+  function getCanvasCtx() {
+    const canvasObj:any = getCanvasObj();
+    return canvasObj.getContext("2d");
+  }
+
   function getPos(canvasObj:any, x:number, y:number) {
     const rect = canvasObj.getBoundingClientRect();
     const posX = x - rect.left;
@@ -153,10 +166,38 @@ function GameBoard() {
     });
   }
 
-  function installMouseMoveListener(canvasObj:any){
+  function installMouseMoveListener(){
+    const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('mousemove', (e:MouseEvent) => {
       getPos(canvasObj,e.clientX,e.clientY);
     });
+  }
+
+  function installMouseClickListener() {
+    const canvasObj:any = getCanvasObj();
+    canvasObj.addEventListener('click', (e:MouseEvent) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      reachColumn(canvasObj, x,y);
+      reachRow(canvasObj,x,y);
+    },false);
+  }
+
+  function uninstallMouseClickListener() {
+    const canvasObj:any = getCanvasObj();
+    canvasObj.addEventListener('click', (e:MouseEvent) => {
+      return; // Do nothing
+    });
+  }
+
+  function updateCanvas(canvasObj:any,edge:Edge, color: string) {
+    const canvasCtx = canvasObj.getContext("2d");
+    canvasCtx.beginPath();
+    canvasCtx.lineWidth = "4";
+    canvasCtx.strokeStyle = color;
+    canvasCtx.moveTo(edge.x1,edge.y1);
+    canvasCtx.lineTo(edge.x2,edge.y2);
+    canvasCtx.stroke();
   }
 
   const gridColumns:any[] = [];
@@ -206,6 +247,80 @@ function GameBoard() {
     storeRowInfo(x,y);
   }
 
+  function findGridRow(screenY:number) {
+    let gridY:number = -1;
+    gridRows.forEach((rowItem,index) => {
+      if (Math.abs(rowItem.row - screenY)<PROXIMITY_TOLERANCE) {
+        gridY=index;
+        return;
+      }
+    });
+    return gridY;
+  }
+
+  function findGridColumn(screenX:number) {
+    let gridX:number = -1;
+    gridColumns.forEach((columnItem,index) => {
+      if (Math.abs(columnItem.column - screenX)<PROXIMITY_TOLERANCE) {
+        gridX=index;
+        return;
+      }
+    });
+    return gridX;
+  }
+
+  function findScreenRow(gridY:number) {
+    let screenY:number = -1;
+    gridRows.forEach((rowItem,index) => {
+      if (Math.abs(index - gridY)<PROXIMITY_TOLERANCE) {
+        screenY=rowItem.row;
+        return;
+      }
+    });
+    return screenY;    
+  }
+
+  function findScreenColumn(gridX:number) {
+    let screenX:number = -1;
+    gridColumns.forEach((columnItem,index) => {
+      if (Math.abs(index - gridX)<PROXIMITY_TOLERANCE) {
+        screenX=columnItem.column;
+        return;
+      }
+    });
+    return screenX;    
+  }
+
+  function convertGridToScreen(gridEdge:Edge) {
+    const screenX1:number = findGridColumn(gridEdge.x1);
+    const screenY1:number = findGridRow(gridEdge.y1);
+    const screenX2:number = findGridColumn(gridEdge.x2);
+    const screenY2:number = findGridRow(gridEdge.y2);
+    return {
+      x1: screenX1,
+      y1: screenY1,
+      x2: screenX2,
+      y2: screenY2
+    };    
+  }
+
+  /**
+   * Convert screen coordinates to grid coordinates to keep backend independent from frontend presentation decisions 
+   */
+  function convertScreenToGrid(screenEdge:Edge) {
+    const gridX1:number = findGridColumn(screenEdge.x1);
+    const gridY1:number = findGridRow(screenEdge.y1);
+    const gridX2:number = findGridColumn(screenEdge.x2);
+    const gridY2:number = findGridRow(screenEdge.y2);
+    return {
+      x1: gridX1,
+      y1: gridY1,
+      x2: gridX2,
+      y2: gridY2
+    };
+  }
+
+
   function findAdjacentXPoints(gridInfo:any, x:number) {
     for (let i = 0; i < gridInfo.items.length; i++) {
       if (x < gridInfo.items[i]){
@@ -238,19 +353,6 @@ function GameBoard() {
     return null;
   }
 
-  function getPlayerColor(playerId:number) {
-    return playerId==1? "#0077c2" : "#790e8b";
-  }
-
-  function updateCanvas(canvasObj:any,edge:Edge, playerId: number) {
-    const canvasCtx = canvasObj.getContext("2d");
-    canvasCtx.beginPath();
-    canvasCtx.lineWidth = "4";
-    canvasCtx.strokeStyle = getPlayerColor(playerId);
-    canvasCtx.moveTo(edge.x1,edge.y1);
-    canvasCtx.lineTo(edge.x2,edge.y2);
-    canvasCtx.stroke();
-  }
 
   const PROXIMITY_TOLERANCE = 5;
 
@@ -261,7 +363,6 @@ function GameBoard() {
       if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentXPoints(rowItem,pos.x);
         if (edge!=null) {
-          //updateCanvas(canvasObj, edge, Number(myPlayerNumber));
           sendPlay(edge);
         }
       }
@@ -275,61 +376,41 @@ function GameBoard() {
       if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
         let edge = findAdjacentYPoints(columnItem,pos.y);
         if (edge!=null) {
-          //updateCanvas(canvasObj, edge, Number(myPlayerNumber));
           sendPlay(edge);
         }
       }
     });
   }
 
-  function isMyTurn(turn:number) {
-    console.log("GameBoard: Turn=" + turn + " MyId=" + myPlayerNumber);
-    return ((turn+1)==Number(myPlayerNumber))? true : false; 
+  function showGameOverMessage(msg:string) {
+    window.alert(msg);
   }
 
-  function installMouseClickListener(canvasObj:any, turn:number) {
-    canvasObj.addEventListener('click', (e:MouseEvent, turn:number) => {
-      if (!isMyTurn(turn)) return;
-
-      const x = e.clientX;
-      const y = e.clientY;
-      reachColumn(canvasObj, x,y);
-      reachRow(canvasObj,x,y);
-    });
+  function updateScore(scorep1:string,scorep2:string) {
+      setPlayer1Score(scorep1);
+      setPlayer2Score(scorep2);
   }
 
-  useEffect(() => {
-    console.log("useEffect turn: Turn=" + turn);
-    const canvasObj:any = canvasRef.current;
-    const canvasCtx = canvasObj.getContext("2d");
-    installMouseMoveListener(canvasObj);
-    installMouseClickListener(canvasObj,Number(turn));  
-  },[turn]);
+  function isMyTurn() {
+    return (Number(currentTurn)==Number(myPlayerId))? true : false; 
+  }
 
-  useEffect(() => {
-    /**
-    * Draw a grid of points
-    * @param ctx Canvas context
-    */
-    function drawGrid(ctx:any){
-      for (let x = minX; Math.trunc(x) <= maxX; x=x+gridXSpace) {
-        for (let y = minY; y <= maxY; y=y+gridYSpace) {
-          storeGridInfo(x,y);
-          ctx.beginPath();
-          ctx.arc(x,y,5,0,2*Math.PI);
-          ctx.fillStyle = "black";
-          ctx.fill();
-          ctx.stroke();
-        }
-      } 
-    }
-
-    if (myPlayerName.length>0) {
-      const canvasObj:any = canvasRef.current;
-      const canvasCtx = canvasObj.getContext("2d");
-      drawGrid(canvasCtx);
-    }
-  },[myPlayerName]);
+  /**
+  * Draw a grid of points
+  * @param ctx Canvas context
+  */
+  function drawGrid(ctx:any){
+    for (let x = minX; Math.trunc(x) <= maxX; x=x+gridXSpace) {
+      for (let y = minY; y <= maxY; y=y+gridYSpace) {
+        storeGridInfo(x,y);
+        ctx.beginPath();
+        ctx.arc(x,y,5,0,2*Math.PI);
+        ctx.fillStyle = "black";
+        ctx.fill();
+        ctx.stroke();
+      }
+    } 
+  }
 
   /**
    * Use the useEffect hook with an empty dependency array for 
@@ -339,8 +420,13 @@ function GameBoard() {
    * componentDidMount.
    */
   useEffect(() => {
+    const canvasObj:any = canvasRef.current;
+    const canvasCtx = canvasObj.getContext("2d");
     connectSocket();
     fetchGameInfo();
+    drawGrid(canvasCtx);
+    installMouseMoveListener();
+    installMouseClickListener();
   },[]);
 
   /**
@@ -367,10 +453,10 @@ function GameBoard() {
           </canvas>
 
           <Score
-            player1name={getPlayerName(1)}
-            player1score={getPlayerScore(1)}
-            player2name={getPlayerName(2)}
-            player2score={getPlayerScore(2)}
+            player1name={player1Name}
+            player1score={player1Score}
+            player2name={player2Name}
+            player2score={player2Score}
           ></Score>
         </div>
       </main>

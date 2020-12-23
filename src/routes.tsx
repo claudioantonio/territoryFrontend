@@ -10,7 +10,7 @@ function Routes() {
         <BrowserRouter>
           <Route path="/" exact component={Register}></Route>
           <Route path="/waitingRoom/:playerId" component={WaitingRoom}></Route>
-          <Route path="/gameBoard/:myPlayerNumber" component={GameBoard}></Route>
+          <Route path="/gameBoard/:playerId" component={GameBoard}></Route>
         </BrowserRouter>
     );
 }

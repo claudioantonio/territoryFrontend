@@ -1,7 +1,14 @@
 import React, { FormEvent, useEffect, useState } from 'react';
 import {useHistory} from 'react-router-dom';
 import api from '../../service/api';
+import socketIo from 'socket.io-client';
+
+
 import './Register.css';
+
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3333';
+
 
 /**
  * Page to register a new player
@@ -9,6 +16,18 @@ import './Register.css';
 function Register() {
   const [user,setUser] = useState('Enter a nickname');
   const history = useHistory();
+
+  function connectSocket() {
+    const socket = socketIo(API_URL);
+    socket.on('connect', () => {
+        console.log('Register: Client connected');
+    });
+
+    // CLEAN UP THE EFFECT
+    return () => socket.disconnect();
+    //
+}
+
 
   /**
    * Submit action handler
@@ -29,10 +48,10 @@ function Register() {
       } else if (roomPass=="GameRoom") {
         history.push("/gameBoard/" + playerId);
       } else {
-        throw new Error("Register: Invalid room pass =" + roomPass);
+        console.log("Register: Invalid room pass =" + roomPass);
       }
-    }).catch(()=>{
-      alert("Error registering Your nickname! :-(");
+    }).catch((e)=>{
+      alert(e);
     });
   }
 
@@ -42,6 +61,10 @@ function Register() {
   function isFormFieldValid() { 
     return (user.length>0)? true : false;  
   }
+
+  useEffect(() => {
+    connectSocket();
+  },[]); // Empty array to execute only one time
 
   /**
    * Page content
