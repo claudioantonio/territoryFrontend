@@ -92,28 +92,30 @@ function GameBoard() {
 
       let player1Id:number = Number(response.player1Id);
 
-      let serverEdge = response.lastPlay;
-      let clientEdge = {
-        x1: serverEdge.initialPoint.x,
-        y1: serverEdge.initialPoint.y,
-        x2: serverEdge.endPoint.x,
-        y2: serverEdge.endPoint.y,
-      }
+      let {x:gridX1,y:gridY1} = response.lastPlay.initialPoint;
+      let {x:gridX2,y:gridY2} = response.lastPlay.endPoint;
+      let gridEdge = {
+        x1: gridX1,
+        y1: gridY1,
+        x2: gridX2,
+        y2: gridY2
+      };
+      const screenEdge = convertGridToScreen(gridEdge);
 
       currentTurn = response.turn;
       if (isMyTurn()) {
         // Received other player play message
         if (Number(myPlayerId)==player1Id) {
-          updateCanvas(canvasObj, clientEdge, player2Color);
+          updateCanvas(canvasObj, screenEdge, player2Color);
         } else {
-          updateCanvas(canvasObj, clientEdge, player1Color);
+          updateCanvas(canvasObj, screenEdge, player1Color);
         }        
       } else {
         // Received my own play message
         if (Number(myPlayerId)==player1Id) {
-          updateCanvas(canvasObj, clientEdge, player1Color);
+          updateCanvas(canvasObj, screenEdge, player1Color);
         } else {
-          updateCanvas(canvasObj, clientEdge, player2Color);
+          updateCanvas(canvasObj, screenEdge, player2Color);
         }
       }
       updateScore(response.score_player1,response.score_player2);
@@ -191,6 +193,8 @@ function GameBoard() {
   }
 
   function updateCanvas(canvasObj:any,edge:Edge, color: string) {
+    console.log('UPDATECANVAS');
+    console.log(edge);
     const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4";
@@ -272,7 +276,7 @@ function GameBoard() {
   function findScreenRow(gridY:number) {
     let screenY:number = -1;
     gridRows.forEach((rowItem,index) => {
-      if (Math.abs(index - gridY)<PROXIMITY_TOLERANCE) {
+      if (index==gridY) {
         screenY=rowItem.row;
         return;
       }
@@ -283,7 +287,8 @@ function GameBoard() {
   function findScreenColumn(gridX:number) {
     let screenX:number = -1;
     gridColumns.forEach((columnItem,index) => {
-      if (Math.abs(index - gridX)<PROXIMITY_TOLERANCE) {
+      console.log('findScreenColum: index=' + index + ' gridX=' + gridX);
+      if (index==gridX) {
         screenX=columnItem.column;
         return;
       }
@@ -292,10 +297,10 @@ function GameBoard() {
   }
 
   function convertGridToScreen(gridEdge:Edge) {
-    const screenX1:number = findGridColumn(gridEdge.x1);
-    const screenY1:number = findGridRow(gridEdge.y1);
-    const screenX2:number = findGridColumn(gridEdge.x2);
-    const screenY2:number = findGridRow(gridEdge.y2);
+    const screenX1:number = findScreenColumn(gridEdge.x1);
+    const screenY1:number = findScreenRow(gridEdge.y1);
+    const screenX2:number = findScreenColumn(gridEdge.x2);
+    const screenY2:number = findScreenRow(gridEdge.y2);
     return {
       x1: screenX1,
       y1: screenY1,
