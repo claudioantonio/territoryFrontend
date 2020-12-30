@@ -57,19 +57,29 @@ function GameBoard() {
     })
   }
 
+  /**
+   * Send a play to the server game
+   * @param screenEdge Edge clicked by the player
+   */
   function sendPlay(screenEdge:Edge|null) {
+    console.log('sendPlay - received null edge=' + (screenEdge==null));
     if (screenEdge==null) return;
 
     const gridEdge = convertScreenToGrid(screenEdge);
-    api.post("selection", {
+    console.log('sendPlay - gridEdge');
+    console.log(gridEdge);
+    try {
+      api.post("selection", {
         'x1': gridEdge.x1,
         'y1': gridEdge.y1,
         'x2': gridEdge.x2,
         'y2': gridEdge.y2,
         'player': myPlayerId,
-    }).catch(()=>{
-      alert("Error selecting a side");
-    });
+      });
+    } catch (error) {
+      console.log(error.response);
+      console.log(error.request);
+    }
   }
   //==============================================================
 
@@ -123,7 +133,8 @@ function GameBoard() {
         }
       }
       updateScore(response.score_player1,response.score_player2);
-      if (response.gameStatus) {
+
+      if (response.gameOver==true) {
         showGameOverMessage(response.message);
       }
     });
@@ -188,8 +199,21 @@ function GameBoard() {
       }
       const x = e.clientX;
       const y = e.clientY;
-      sendPlay(reachColumn(canvasObj, x,y));
-      sendPlay(reachRow(canvasObj,x,y));
+      const pos = getPos(canvasObj,x,y);
+
+      const columnItem = reachColumn(canvasObj, pos.x)
+      if (columnItem!=null) {
+        console.log('Click - reach a column');
+        sendPlay(findAdjacentYPoints(columnItem,pos.y));
+        return;
+      }
+
+      const rowItem = reachRow(canvasObj, pos.y)
+      if (rowItem!=null) {
+        console.log('Click - reach a row');
+        sendPlay(findAdjacentXPoints(rowItem,pos.x));
+        return;
+      }
     },false);
   }
 
@@ -371,15 +395,13 @@ function GameBoard() {
    * Check if click reached a horizontal edge and return this edge
    * 
    * @param canvasObj Canvas
-   * @param x x position for the click
    * @param y y position for the click
    */
-  function reachRow(canvasObj:any, x:number,y:number) {
+  function reachRow(canvasObj:any, y:number) {
     for(let i=0; i<gridRows.length; i++) {
-      const pos = getPos(canvasObj,x,y);
       const rowItem = gridRows[i];
-      if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
-        return findAdjacentXPoints(rowItem,pos.x);
+      if (Math.abs(rowItem.row - y)<PROXIMITY_TOLERANCE) {
+        return rowItem;
       }
     }
     return null;
@@ -392,12 +414,11 @@ function GameBoard() {
    * @param x x position for the click
    * @param y y position for the click
    */
-  function reachColumn(canvasObj:any, x:number,y:number) {
+  function reachColumn(canvasObj:any, x:number) {
     for(let i=0; i<gridColumns.length; i++) {
-      const pos = getPos(canvasObj,x,y);
       let columnItem = gridColumns[i];
-      if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
-        return findAdjacentYPoints(columnItem,pos.y);
+      if (Math.abs(columnItem.column - x)<PROXIMITY_TOLERANCE) {
+        return columnItem;
       }
     }
     return null;
