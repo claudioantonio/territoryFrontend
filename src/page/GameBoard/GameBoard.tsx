@@ -182,8 +182,7 @@ function GameBoard() {
   function installMouseClickListener() {
     const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('click', (e:MouseEvent) => {
-      console.log('CLICK - TURN=' + currentTurn);
-      if (Number(currentTurn)!=Number(myPlayerId)) {
+      if (isMyTurn()===false) {
         window.alert('It´s not Your turn to play now. Please wait! ;-)');
         return;
       }
