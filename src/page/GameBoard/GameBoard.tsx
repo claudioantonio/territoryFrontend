@@ -183,8 +183,10 @@ function GameBoard() {
     const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('click', (e:MouseEvent) => {
       console.log('CLICK - TURN=' + currentTurn);
-      if (Number(currentTurn)!=Number(myPlayerId)) return;
-
+      if (Number(currentTurn)!=Number(myPlayerId)) {
+        window.alert('It´s not Your turn to play now. Please wait! ;-)');
+        return;
+      }
       const x = e.clientX;
       const y = e.clientY;
       sendPlay(reachColumn(canvasObj, x,y));
