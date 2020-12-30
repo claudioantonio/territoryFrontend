@@ -57,7 +57,9 @@ function GameBoard() {
     })
   }
 
-  function sendPlay(screenEdge:Edge) {
+  function sendPlay(screenEdge:Edge|null) {
+    if (screenEdge==null) return;
+
     const gridEdge = convertScreenToGrid(screenEdge);
     api.post("selection", {
         'x1': gridEdge.x1,
@@ -88,7 +90,7 @@ function GameBoard() {
     socket.on('gameUpdate', (response:any) => {
       console.log(response);
 
-      const canvasObj:any = canvasRef.current;
+      const canvasCtx:any = getCanvasCtx();
 
       let player1Id:number = Number(response.player1Id);
 
@@ -104,18 +106,20 @@ function GameBoard() {
 
       currentTurn = response.turn;
       if (isMyTurn()) {
+        console.log('GAMEUPDATE - Its my turn to play');
         // Received other player play message
-        if (Number(myPlayerId)==player1Id) {
-          updateCanvas(canvasObj, screenEdge, player2Color);
+        if (Number(myPlayerId)===player1Id) {
+          updateCanvas(canvasCtx, screenEdge, player2Color);
         } else {
-          updateCanvas(canvasObj, screenEdge, player1Color);
+          updateCanvas(canvasCtx, screenEdge, player1Color);
         }        
       } else {
+        console.log('GAMEUPDATE - Its *NOT* my turn to play');
         // Received my own play message
-        if (Number(myPlayerId)==player1Id) {
-          updateCanvas(canvasObj, screenEdge, player1Color);
+        if (Number(myPlayerId)===player1Id) {
+          updateCanvas(canvasCtx, screenEdge, player1Color);
         } else {
-          updateCanvas(canvasObj, screenEdge, player2Color);
+          updateCanvas(canvasCtx, screenEdge, player2Color);
         }
       }
       updateScore(response.score_player1,response.score_player2);
@@ -178,10 +182,13 @@ function GameBoard() {
   function installMouseClickListener() {
     const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('click', (e:MouseEvent) => {
+      console.log('CLICK - TURN=' + currentTurn);
+      if (Number(currentTurn)!=Number(myPlayerId)) return;
+
       const x = e.clientX;
       const y = e.clientY;
-      reachColumn(canvasObj, x,y);
-      reachRow(canvasObj,x,y);
+      sendPlay(reachColumn(canvasObj, x,y));
+      sendPlay(reachRow(canvasObj,x,y));
     },false);
   }
 
@@ -192,12 +199,11 @@ function GameBoard() {
     });
   }
 
-  function updateCanvas(canvasObj:any,edge:Edge, color: string) {
+  function updateCanvas(canvasCtx:any,edge:Edge, color: string) {
     console.log('UPDATECANVAS');
     console.log(edge);
-    const canvasCtx = canvasObj.getContext("2d");
     canvasCtx.beginPath();
-    canvasCtx.lineWidth = "4";
+    canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
     canvasCtx.strokeStyle = color;
     canvasCtx.moveTo(edge.x1,edge.y1);
     canvasCtx.lineTo(edge.x2,edge.y2);
@@ -276,7 +282,7 @@ function GameBoard() {
   function findScreenRow(gridY:number) {
     let screenY:number = -1;
     gridRows.forEach((rowItem,index) => {
-      if (index==gridY) {
+      if (index===gridY) {
         screenY=rowItem.row;
         return;
       }
@@ -287,8 +293,7 @@ function GameBoard() {
   function findScreenColumn(gridX:number) {
     let screenX:number = -1;
     gridColumns.forEach((columnItem,index) => {
-      console.log('findScreenColum: index=' + index + ' gridX=' + gridX);
-      if (index==gridX) {
+      if (index===gridX) {
         screenX=columnItem.column;
         return;
       }
@@ -361,30 +366,40 @@ function GameBoard() {
 
   const PROXIMITY_TOLERANCE = 5;
 
+    /**
+   * Check if click reached a horizontal edge and return this edge
+   * 
+   * @param canvasObj Canvas
+   * @param x x position for the click
+   * @param y y position for the click
+   */
   function reachRow(canvasObj:any, x:number,y:number) {
-    console.log(gridRows);
-    gridRows.forEach(rowItem => {
+    for(let i=0; i<gridRows.length; i++) {
       const pos = getPos(canvasObj,x,y);
+      const rowItem = gridRows[i];
       if (Math.abs(rowItem.row - pos.y)<PROXIMITY_TOLERANCE) {
-        let edge = findAdjacentXPoints(rowItem,pos.x);
-        if (edge!=null) {
-          sendPlay(edge);
-        }
+        return findAdjacentXPoints(rowItem,pos.x);
       }
-    });
+    }
+    return null;
   }
 
+  /**
+   * Check if click reached a vertical edge and return this edge
+   * 
+   * @param canvasObj Canvas
+   * @param x x position for the click
+   * @param y y position for the click
+   */
   function reachColumn(canvasObj:any, x:number,y:number) {
-    console.log(gridColumns);
-    gridColumns.forEach(columnItem => {
+    for(let i=0; i<gridColumns.length; i++) {
       const pos = getPos(canvasObj,x,y);
+      let columnItem = gridColumns[i];
       if (Math.abs(columnItem.column - pos.x)<PROXIMITY_TOLERANCE) {
-        let edge = findAdjacentYPoints(columnItem,pos.y);
-        if (edge!=null) {
-          sendPlay(edge);
-        }
+        return findAdjacentYPoints(columnItem,pos.y);
       }
-    });
+    }
+    return null;
   }
 
   function showGameOverMessage(msg:string) {
@@ -397,7 +412,7 @@ function GameBoard() {
   }
 
   function isMyTurn() {
-    return (Number(currentTurn)==Number(myPlayerId))? true : false; 
+    return (Number(currentTurn)===Number(myPlayerId))? true : false; 
   }
 
   /**
@@ -425,8 +440,7 @@ function GameBoard() {
    * componentDidMount.
    */
   useEffect(() => {
-    const canvasObj:any = canvasRef.current;
-    const canvasCtx = canvasObj.getContext("2d");
+    const canvasCtx = getCanvasCtx();
     connectSocket();
     fetchGameInfo();
     drawGrid(canvasCtx);

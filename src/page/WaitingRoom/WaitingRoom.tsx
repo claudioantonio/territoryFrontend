@@ -40,20 +40,21 @@ function WaitingRoom() {
 
         socket.on('enterGameRoom', (response:any) => {
             const playerInvited:string = response.invitationForPlayer;
-            if (playerId==playerInvited) {
+            console.log("WaitingRoom: enterGameRoom - player invited=" + playerInvited);
+            if (Number(playerId)===Number(playerInvited)) {
                 history.push("/gameBoard/" + playerId);
             }
         });
 
         // CLEAN UP THE EFFECT
-        return () => socket.disconnect();
+        //return () => socket.disconnect();
         //
     }
 
     function fetchWaitingInfo() {
         api.get("waitingroom").then(response => {
             gameStatus = Number(response.data.gameStatus);
-            if ( (gameStatus==2) || (gameStatus==3) ) {
+            if ( (gameStatus===2) || (gameStatus===3) ) { // TODO: Remover números mágicos
                 setPlayer1Name(response.data.player1);
                 setPlayer2Name(response.data.player2);
             }

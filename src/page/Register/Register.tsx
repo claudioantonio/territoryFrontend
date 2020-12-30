@@ -36,16 +36,16 @@ function Register() {
   const handleSubmit = (e:FormEvent) => {
     e.preventDefault();
 
-    if (isFormFieldValid()==false) return;
+    if (isFormFieldValid()===false) return;
 
     api.post("register",{
       user,
     }).then(response => {
       const playerId = response.data.playerId;
       const roomPass = response.data.roomPass;
-      if (roomPass=='WaitingRoom') {
+      if (roomPass==='WaitingRoom') {
         history.push("/waitingRoom/" + playerId);
-      } else if (roomPass=="GameRoom") {
+      } else if (roomPass==="GameRoom") {
         history.push("/gameBoard/" + playerId);
       } else {
         console.log("Register: Invalid room pass =" + roomPass);
