@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
@@ -25,6 +25,8 @@ interface Edge {
 function GameBoard() {
   let { playerId } = useParams<GameBoardParams>();
   const myPlayerId = playerId;
+
+  const history = useHistory();
 
   const [player1Name,setPlayer1Name] = useState('');
   const [player1Score,setPlayer1Score] = useState('0');
@@ -134,8 +136,26 @@ function GameBoard() {
       }
       updateScore(response.score_player1,response.score_player2);
 
+      //TODO Refactor!!!
       if (response.gameOver==true) {
         showGameOverMessage(response.message);
+        if (Number(response.whatsNext.winner.playerId)==Number(myPlayerId)) {
+          if (response.whatsNext.winner.roomPass==='WaitingRoom') {
+            history.push("/waitingRoom/" + myPlayerId);
+          } else if (response.whatsNext.winner.roomPass==="GameRoom") {
+            window.location.reload();
+          } else {
+            console.log("Register: Invalid room pass =" + response.winner.roomPass);
+          }
+        } else {
+          if (response.whatsNext.looser.roomPass==='WaitingRoom') {
+            history.push("/waitingRoom/" + myPlayerId);
+          } else if (response.whatsNext.looser.roomPass==="GameRoom") {
+            history.push("/gameBoard/" + myPlayerId);
+          } else {
+            console.log("Register: Invalid room pass =" + response.looser.roomPass);
+          }
+        }
       }
     });
 
@@ -153,7 +173,7 @@ function GameBoard() {
     */
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 4;
+  const gridSize = 6;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
