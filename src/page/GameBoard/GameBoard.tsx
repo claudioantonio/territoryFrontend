@@ -6,6 +6,7 @@ import socketIo from 'socket.io-client';
 import Score from '../../component/Score/Score';
 
 import './GameBoard.css';
+import { render } from 'react-dom';
 
 interface GameBoardParams {
   playerId: string;
@@ -28,8 +29,11 @@ function GameBoard() {
 
   const history = useHistory();
 
+  const [player1Id,setPlayer1Id] = useState('');
   const [player1Name,setPlayer1Name] = useState('');
   const [player1Score,setPlayer1Score] = useState('0');
+  const [player1turn,setPlayer1Turn] = useState(true);
+
   const [player2Name,setPlayer2Name] = useState('');
   const [player2Score,setPlayer2Score] = useState('0');
 
@@ -38,7 +42,8 @@ function GameBoard() {
   const player2Color = "#790e8b";
 
   // Player Id for the current play
-  let currentTurn:number;
+  const [currentTurn,setCurrentTurn] = useState(player1Id);
+  const [myTurn,setMyTurn] = useState(false);
 
   /**
    * =============================================================
@@ -46,14 +51,9 @@ function GameBoard() {
    */
   function fetchGameInfo() {
     api.get("gameinfo").then(response => {
-      currentTurn = response.data.turn;
-      console.log('GameInfo: current=' + currentTurn);
-      if (isMyTurn()) {
-        installMouseClickListener();
-      } else {
-        uninstallMouseClickListener();
-      }
-    
+      console.log('FetchGameInfo rawTurn=' + response.data.turn);
+      setPlayer1Id(response.data.player1Id);
+      setCurrentTurn(response.data.turn);
       setPlayer1Name(response.data.player1);
       setPlayer2Name(response.data.player2);
     })
@@ -64,8 +64,9 @@ function GameBoard() {
    * @param screenEdge Edge clicked by the player
    */
   function sendPlay(screenEdge:Edge|null) {
-    console.log('sendPlay - received null edge=' + (screenEdge==null));
+    console.log('sendPlay - invalid edge=' + (screenEdge==null) + ' myturn=' + myTurn);
     if (screenEdge==null) return;
+    //if (myTurn===false) return;
 
     const gridEdge = convertScreenToGrid(screenEdge);
     console.log('sendPlay - gridEdge');
@@ -100,7 +101,7 @@ function GameBoard() {
     });
 
     socket.on('gameUpdate', (response:any) => {
-      console.log(response);
+      //console.log(response);
 
       const canvasCtx:any = getCanvasCtx();
 
@@ -115,9 +116,10 @@ function GameBoard() {
         y2: gridY2
       };
       const screenEdge = convertGridToScreen(gridEdge);
-
-      currentTurn = response.turn;
-      if (isMyTurn()) {
+      console.log('gameupdate turn=' + response.turn);
+      setCurrentTurn(response.turn);
+      let myTurn:boolean = Number(response.turn)===Number(myPlayerId)? true : false;
+      if (myTurn) {
         console.log('GAMEUPDATE - Its my turn to play');
         // Received other player play message
         if (Number(myPlayerId)===player1Id) {
@@ -145,7 +147,7 @@ function GameBoard() {
           } else if (response.whatsNext.winner.roomPass==="GameRoom") {
             window.location.reload();
           } else {
-            console.log("Register: Invalid room pass =" + response.winner.roomPass);
+            //console.log("Register: Invalid room pass =" + response.winner.roomPass);
           }
         } else {
           if (response.whatsNext.looser.roomPass==='WaitingRoom') {
@@ -153,7 +155,7 @@ function GameBoard() {
           } else if (response.whatsNext.looser.roomPass==="GameRoom") {
             history.push("/gameBoard/" + myPlayerId);
           } else {
-            console.log("Register: Invalid room pass =" + response.looser.roomPass);
+            //console.log("Register: Invalid room pass =" + response.looser.roomPass);
           }
         }
       }
@@ -213,24 +215,20 @@ function GameBoard() {
   function installMouseClickListener() {
     const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('click', (e:MouseEvent) => {
-      if (isMyTurn()===false) {
-        window.alert('It´s not Your turn to play now. Please wait! ;-)');
-        return;
-      }
       const x = e.clientX;
       const y = e.clientY;
       const pos = getPos(canvasObj,x,y);
 
       const columnItem = reachColumn(canvasObj, pos.x)
       if (columnItem!=null) {
-        console.log('Click - reach a column');
+        //console.log('Click - reach a column');
         sendPlay(findAdjacentYPoints(columnItem,pos.y));
         return;
       }
 
       const rowItem = reachRow(canvasObj, pos.y)
       if (rowItem!=null) {
-        console.log('Click - reach a row');
+        //console.log('Click - reach a row');
         sendPlay(findAdjacentXPoints(rowItem,pos.x));
         return;
       }
@@ -245,8 +243,8 @@ function GameBoard() {
   }
 
   function updateCanvas(canvasCtx:any,edge:Edge, color: string) {
-    console.log('UPDATECANVAS');
-    console.log(edge);
+    //console.log('UPDATECANVAS');
+    //console.log(edge);
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
     canvasCtx.strokeStyle = color;
@@ -385,7 +383,7 @@ function GameBoard() {
           x2: gridInfo.items[i],
           y2: gridInfo.row,
         }
-        console.log(edge);
+        //console.log(edge);
         return edge; 
       }
     }
@@ -401,7 +399,7 @@ function GameBoard() {
           x2: gridInfo.column,
           y2: gridInfo.items[i],
         }
-        console.log(edge);
+        //console.log(edge);
         return edge; 
       }
     }
@@ -453,10 +451,6 @@ function GameBoard() {
       setPlayer2Score(scorep2);
   }
 
-  function isMyTurn() {
-    return (Number(currentTurn)===Number(myPlayerId))? true : false; 
-  }
-
   /**
   * Draw a grid of points
   * @param ctx Canvas context
@@ -473,6 +467,16 @@ function GameBoard() {
       }
     } 
   }
+
+  useEffect(()=>{
+    console.log('current turn updated');
+    // Determine if it´s player 1 turn
+    let isPlayer1Turn:boolean = (Number(player1Id)===Number(currentTurn))? true: false;
+    setPlayer1Turn(isPlayer1Turn);
+    // Determine if it´s myturn
+    let myTurn:boolean = Number(currentTurn)===Number(myPlayerId)? true : false;
+    setMyTurn(myTurn);
+  },[currentTurn]);
 
   /**
    * Use the useEffect hook with an empty dependency array for 
@@ -513,12 +517,25 @@ function GameBoard() {
             height={canvasHeight}>
           </canvas>
 
-          <Score
-            player1name={player1Name}
-            player1score={player1Score}
-            player2name={player2Name}
-            player2score={player2Score}
-          ></Score>
+          <div className="score-container">
+            <Score
+              title="Player 1"
+              className="player1-title"
+              playerName={player1Name}
+              playerScore={player1Score}
+              // anything wrapped in " or ' would be sent as a string. 
+              // If you want to keep the value type, such as an integer, 
+              // float, boolean, object, etc, you would need to wrap it in {}
+              blink={player1turn} 
+            ></Score>
+            <Score
+              title="Player 2"
+              className="player2-title"
+              playerName={player2Name}
+              playerScore={player2Score}
+              blink={!player1turn}
+            ></Score>
+          </div>
         </div>
       </main>
       <footer><h5>Fork freely from <a href="https://github.com/claudioantonio/territoryFrontend">github</a></h5></footer>

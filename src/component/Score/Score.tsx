@@ -1,13 +1,16 @@
 import React from 'react';
 
+import './Score.css';
+
 /**
  * Score properties
  */
 interface ScoreProps {
-    player1name:string;
-    player1score:string;
-    player2name:string;
-    player2score:string;
+    title:string;
+    className:string;
+    playerName:string;
+    playerScore:string;
+    blink:boolean;
 }
 
 /**
@@ -16,17 +19,18 @@ interface ScoreProps {
  * @param props Game info to show in Score
  */
 const Score: React.FC<ScoreProps> = (props) => {
+    let scoreContainerClass;
+    if (props.blink===true) {
+        scoreContainerClass = "blinking-score-container";
+    } else {
+        scoreContainerClass = "normal-score-container";
+    }
+    
     return(
-    <div className="score-container">
-        <div className="player1-container">
-            <h3 className="player1-title">Player 1</h3>
-            <strong>{props.player1name}: {props.player1score}</strong>
+        <div className={scoreContainerClass}>
+            <h3 className={props.className}>{props.title}</h3>
+            <strong>{props.playerName}: {props.playerScore}</strong>
         </div>
-        <div className="player2-container">
-            <h3 className="player2-title">Player 2</h3>
-            <strong>{props.player2name}: {props.player2score}</strong>
-        </div>
-    </div>
     );
 }
 
