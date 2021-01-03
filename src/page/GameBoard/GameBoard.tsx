@@ -138,9 +138,10 @@ function GameBoard() {
       }
       updateScore(response.score_player1,response.score_player2);
 
-      //TODO Refactor!!!
+      //TODO Refactor for god sake!!!
       if (response.gameOver==true) {
         showGameOverMessage(response.message);
+        socket.disconnect();
         if (Number(response.whatsNext.winner.playerId)==Number(myPlayerId)) {
           if (response.whatsNext.winner.roomPass==='WaitingRoom') {
             history.push("/waitingRoom/" + myPlayerId);
@@ -154,6 +155,8 @@ function GameBoard() {
             history.push("/waitingRoom/" + myPlayerId);
           } else if (response.whatsNext.looser.roomPass==="GameRoom") {
             history.push("/gameBoard/" + myPlayerId);
+          } else if (response.whatsNext.looser.roomPass==="RegisterRoom") {
+            history.push("/");
           } else {
             //console.log("Register: Invalid room pass =" + response.looser.roomPass);
           }
