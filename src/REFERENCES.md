@@ -15,3 +15,16 @@ https://reactjs.org/docs/hooks-faq.html#is-it-safe-to-omit-functions-from-the-li
 React Function Components
 
 https://www.robinwieruch.de/react-function-component#react-function-component-example
+
+Hooks/Closures
+
+https://stackoverflow.com/questions/30782948/why-calling-react-setstate-method-doesnt-mutate-the-state-immediately
+https://kentcdodds.com/blog/how-to-use-react-context-effectively
+https://dmitripavlutin.com/react-hooks-stale-closures/
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures
+
+CSS Animations
+
+https://www.w3schools.com/css/css3_animations.asp
+https://www.freecodecamp.org/news/react-change-inline-css-conditionally-based-on-component-state/
+http://www.multipetros.gr/posts/728-blink-elements-border-the-css-way/
