@@ -1,20 +1,22 @@
-Território
+# Território
 
-O jogo
+## O jogo
 
-Conheci esse jogo na forma de uma brincadeira nos tempos de escola. Para brincar era necessário apenas uma folha de caderno e canetas de cores diferentes (você lembra da bic 4 cores?). :)
+Conheci esse jogo nos tempos de escola. Para brincar era necessário apenas uma folha de caderno e canetas de cores diferentes (você lembra da bic 4 cores?). :)
 
-Para jogar desenha-se pontos na folha de papel formando um grid e cada jogador escolhe uma cor.
+Para jogar desenhávamos uma grade pontos em uma folha de papel e cada jogador escolhia uma cor.
 
-O objetivo do jogo é ligar os pontos adjacentes do grid (sempre na horizontal ou vertical), criando arestas. Quando uma aresta for criada e, com isso, fechar um quadrado, aquele que criou esta aresta passa a ser dono do quadrado que foi fechado.
+O objetivo do jogo é ligar os pontos adjacentes do grade (sempre na horizontal ou vertical), criando arestas. Quando uma aresta for criada e, com isso, fechar um quadrado, aquele que criou esta aresta passa a ser dono do quadrado que foi fechado e marca um ponto.
 
-A propriedade dos quadrados era sinalizada pintando seu interior com a cor do jogador que fechou o quadrado.
+A propriedade dos quadrados era sinalizada colocando-se a inicial do nome no interior do quadrado.
 
-O jogo termina quando não houverem mais arestas a serem desenhadas no grid e o ganhador é aquele que ficou com o maior número de quadrados.
+O jogo terminava quando não haviam mais arestas a serem desenhadas na grade e o ganhador era aquele que conseguiu fechar o maior número de quadrados.
+
+Simples e divertido!
 
 ----
 
-Como jogar esta implementação?
+## Como jogar esta implementação?
 
 1. Convide alguém para jogar com você (ou abra duas janelas do browser)
 2. Entre com um apelido para identificação e clique no botão Play
@@ -24,34 +26,27 @@ Como jogar esta implementação?
 
 ----
 
-Como executar o cliente?
+## Última Release
 
-Faça o clone deste repositório
-yarn start
+O Jogo encontra-se na versão v1.0-beta.1 e pode ser experimentada em https://territorygame.vercel.app/
 
-----
-
-Plano de releases
-
-V1
-- Possibilitar 2 jogadores e uma fila de espera
-
-v2
-- Ranking
-
-v3
-- Possibilitar a definição de nível de dificuldade (grid size)
-
-v4
-- Possibilitar 4 jogadores simultâneamente
-
-v5
-- Possibilitar salas de jogo independentes com até 4 jogadores
+Em caso de bugs ou caso tenha alguma sugestão de melhoria, por favor, crie uma issue em: https://github.com/claudioantonio/territoryFrontend/issues
 
 ----
 
-Colaboração
+## Plano de futuras releases
 
-Gostou da ideia e quer bater um papo? Escreva para claudio.engdist@gmail.com.
-Merge requests serão muito bem-vindos!
+v2.0
+- Atualização do placar na sala de espera para quem estiver aguardando a sua vez acompanhar o jogo que estiver em andamento
+- Possibilitar jogar contra a máquina, quando não houver outro adversário online
+
+v3.0
+- Criar variações como, por exemplo, ter quadrados coringas, que ao serem fechados podem aumentar o score ou diminuir o score
+
+----
+
+## Colaboração
+
+Gostou da ideia e quer bater um papo? Escreva para claudio.engdist@gmail.com.  
+Merge requests serão muito bem-vindos!  
 Se você quiser fazer um fork e desenvolver sua própria ideia a partir deste código, fique à vontade!
