@@ -1,8 +1,10 @@
 import React, { FormEvent, useEffect, useState } from 'react';
 import {useHistory} from 'react-router-dom';
+import {trackPromise} from 'react-promise-tracker';
 import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
+import LoadingSpinner from '../../component/Spinner/LoadingSpinner';
 
 import './Register.css';
 
@@ -15,6 +17,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3333';
  */
 function Register() {
   const [user,setUser] = useState('Enter a nickname');
+  const [disableUserInteraction,setDisableUserInteraction] = useState(false);
   const history = useHistory();
 
   function connectSocket() {
@@ -28,7 +31,6 @@ function Register() {
     //
 }
 
-
   /**
    * Submit action handler
    * @param e Event
@@ -38,21 +40,25 @@ function Register() {
 
     if (isFormFieldValid()===false) return;
 
-    api.post("register",{
-      user,
-    }).then(response => {
-      const playerId = response.data.playerId;
-      const roomPass = response.data.roomPass;
-      if (roomPass==='WaitingRoom') {
-        history.push("/waitingRoom/" + playerId);
-      } else if (roomPass==="GameRoom") {
-        history.push("/gameBoard/" + playerId);
-      } else {
-        console.log("Register: Invalid room pass =" + roomPass);
-      }
-    }).catch((e)=>{
-      alert(e);
-    });
+    setDisableUserInteraction(true);
+
+    trackPromise(
+      api.post("register",{
+        user,
+      }).then(response => {
+        const playerId = response.data.playerId;
+        const roomPass = response.data.roomPass;
+        if (roomPass==='WaitingRoom') {
+          history.push("/waitingRoom/" + playerId);
+        } else if (roomPass==="GameRoom") {
+          history.push("/gameBoard/" + playerId);
+        } else {
+          console.log("Register: Invalid room pass =" + roomPass);
+        }
+      }).catch((e)=>{
+        alert(e);
+      })
+    );
   }
 
   /**
@@ -71,6 +77,7 @@ function Register() {
    */
   return (
     <div>
+      <LoadingSpinner/>
       <header>
         <h1>Territory</h1>
         <h3>An old school game</h3>
@@ -85,8 +92,11 @@ function Register() {
                 value={user} 
                 onClick={(e) => {setUser("");}}
                 onChange={(e) => {setUser(e.target.value);}}
+                disabled={disableUserInteraction}
               />
-            <button type="submit">Play</button>
+            <button 
+              type="submit" 
+              disabled={disableUserInteraction}>Play</button>
           </div>
         </form>
       </main>
