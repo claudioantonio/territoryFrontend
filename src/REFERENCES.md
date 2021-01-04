@@ -28,3 +28,10 @@ CSS Animations
 https://www.w3schools.com/css/css3_animations.asp
 https://www.freecodecamp.org/news/react-change-inline-css-conditionally-based-on-component-state/
 http://www.multipetros.gr/posts/728-blink-elements-border-the-css-way/
+
+Spinner
+https://github.com/derrickpelletier/react-loading-overlay#readme
+https://www.basefactor.com/react-how-to-display-a-loading-indicator-on-fetch-calls
+https://lemoncode.github.io/react-promise-tracker/
+
+
