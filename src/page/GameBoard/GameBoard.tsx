@@ -59,6 +59,15 @@ function GameBoard() {
     })
   }
 
+  function sendBotPlay() {
+    try {
+      api.post("botplay");
+    } catch (error) {
+      console.log(error.response);
+      console.log(error.request);
+    }
+  }
+
   /**
    * Send a play to the server game
    * @param screenEdge Edge clicked by the player
@@ -119,17 +128,15 @@ function GameBoard() {
       console.log('gameupdate turn=' + response.turn);
       setCurrentTurn(response.turn);
       let myTurn:boolean = Number(response.turn)===Number(myPlayerId)? true : false;
-      if (myTurn) {
+      if (myTurn) { // Received other player play message
         console.log('GAMEUPDATE - Its my turn to play');
-        // Received other player play message
         if (Number(myPlayerId)===player1Id) {
           updateCanvas(canvasCtx, screenEdge, player2Color);
         } else {
           updateCanvas(canvasCtx, screenEdge, player1Color);
         }        
-      } else {
+      } else { // Received my own play message
         console.log('GAMEUPDATE - Its *NOT* my turn to play');
-        // Received my own play message
         if (Number(myPlayerId)===player1Id) {
           updateCanvas(canvasCtx, screenEdge, player1Color);
         } else {
@@ -161,6 +168,10 @@ function GameBoard() {
             //console.log("Register: Invalid room pass =" + response.looser.roomPass);
           }
         }
+      }
+
+      if (myTurn==false) {
+        sendBotPlay();
       }
     });
 
@@ -476,6 +487,10 @@ function GameBoard() {
     // Determine if it´s player 1 turn
     let isPlayer1Turn:boolean = (Number(player1Id)===Number(currentTurn))? true: false;
     setPlayer1Turn(isPlayer1Turn);
+    if ((isPlayer1Turn===true)&&(Number(player1Id)===0)) {
+        console.log('curr turn=' + currentTurn + ' player1=' + player1Id);
+        sendBotPlay();
+    }
     // Determine if it´s myturn
     let myTurn:boolean = Number(currentTurn)===Number(myPlayerId)? true : false;
     setMyTurn(myTurn);
