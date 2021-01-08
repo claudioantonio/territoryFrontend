@@ -35,6 +35,10 @@ function WaitingRoom() {
         });
 
         socket.on('waitingRoomUpdate', (response:any) => {
+            console.log('waitingRoom: waitingRoomUpdate message');
+            console.log(response);
+            setPlayer1Name(response.player1.name);
+            setPlayer2Name(response.player2.name);
             setWaitingList(response.waitingList);
         });
 
