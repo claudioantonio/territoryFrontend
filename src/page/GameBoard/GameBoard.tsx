@@ -161,7 +161,7 @@ function GameBoard() {
           if (response.whatsNext.looser.roomPass==='WaitingRoom') {
             history.push("/waitingRoom/" + myPlayerId);
           } else if (response.whatsNext.looser.roomPass==="GameRoom") {
-            history.push("/gameBoard/" + myPlayerId);
+            window.location.reload();
           } else if (response.whatsNext.looser.roomPass==="RegisterRoom") {
             history.push("/");
           } else {
@@ -189,7 +189,7 @@ function GameBoard() {
     */
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 6;
+  const gridSize = 3;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
