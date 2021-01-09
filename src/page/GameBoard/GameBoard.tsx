@@ -61,7 +61,24 @@ function GameBoard() {
 
   function sendBotPlay() {
     try {
-      api.post("botplay");
+      api.post(
+        "botplay"
+        ).then(response => {
+        const responseData = response.data;
+        // Get edge selected
+        let {x:gridX1,y:gridY1} = responseData.lastPlay.initialPoint;
+        let {x:gridX2,y:gridY2} = responseData.lastPlay.endPoint;
+        let gridEdge = {
+          x1: gridX1,
+          y1: gridY1,
+          x2: gridX2,
+          y2: gridY2
+        };
+        const screenEdge = convertGridToScreen(gridEdge);
+        // Paint selected edge to update gameboard
+        // Bot is always player1
+        updateCanvas(getCanvasCtx(), screenEdge, player1Color);
+      });
     } catch (error) {
       console.log(error.response);
       console.log(error.request);
@@ -73,20 +90,23 @@ function GameBoard() {
    * @param screenEdge Edge clicked by the player
    */
   function sendPlay(screenEdge:Edge|null) {
-    console.log('sendPlay - invalid edge=' + (screenEdge==null) + ' myturn=' + myTurn);
     if (screenEdge==null) return;
-    //if (myTurn===false) return;
-
     const gridEdge = convertScreenToGrid(screenEdge);
-    console.log('sendPlay - gridEdge');
-    console.log(gridEdge);
     try {
+      console.log('SENDPLAY - ' + myPlayerId + ' played');
       api.post("selection", {
         'x1': gridEdge.x1,
         'y1': gridEdge.y1,
         'x2': gridEdge.x2,
         'y2': gridEdge.y2,
         'player': myPlayerId,
+      }).then(response => {
+        const responseData = response.data;
+        if (Number(myPlayerId)===Number(responseData.player1Id)) {
+          updateCanvas(getCanvasCtx(), screenEdge, player1Color);
+        } else {
+          updateCanvas(getCanvasCtx(), screenEdge, player2Color);
+        }
       });
     } catch (error) {
       console.log(error.response);
@@ -110,7 +130,7 @@ function GameBoard() {
     });
 
     socket.on('gameUpdate', (response:any) => {
-      //console.log(response);
+      console.log('GAMEUPDATE event arrived');
 
       const canvasCtx:any = getCanvasCtx();
 
@@ -125,7 +145,7 @@ function GameBoard() {
         y2: gridY2
       };
       const screenEdge = convertGridToScreen(gridEdge);
-      console.log('gameupdate turn=' + response.turn);
+      console.log('GAMEUPDATE - turn=' + response.turn);
       setCurrentTurn(response.turn);
       let myTurn:boolean = Number(response.turn)===Number(myPlayerId)? true : false;
       if (myTurn) { // Received other player play message
@@ -169,10 +189,6 @@ function GameBoard() {
           }
         }
       }
-
-      if (myTurn==false) {
-        sendBotPlay();
-      }
     });
 
     // CLEAN UP THE EFFECT
@@ -189,7 +205,7 @@ function GameBoard() {
     */
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 3;
+  const gridSize = 4;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
@@ -528,6 +544,7 @@ function GameBoard() {
       </header>
       <main className="main-container">
         <div>
+          <p>Click between 2 adjacents points to play</p>
           <canvas 
             id="boardgame" 
             ref={canvasRef} 
