@@ -1,4 +1,5 @@
 [![DeepScan grade](https://deepscan.io/api/teams/12429/projects/15470/branches/309734/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=12429&pid=15470&bid=309734)
+[![DeepSource](https://deepsource.io/gh/claudioantonio/territoryFrontend.svg/?label=active+issues&show_trend=true)](https://deepsource.io/gh/claudioantonio/territoryFrontend/?ref=repository-badge)
 
 # Território
 
