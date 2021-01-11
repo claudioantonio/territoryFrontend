@@ -34,7 +34,7 @@ function GameBoard() {
   const [setupFetched,setSetupFetched] = useState(false);
   const [boardReady,setBoardReady] = useState(false);
 
-  const [player1Id,setPlayer1Id] = useState('');
+  const [player1Id,setPlayer1Id] = useState('-1');
   const [player1Name,setPlayer1Name] = useState('');
   const [player1Score,setPlayer1Score] = useState('0');
   const [player1turn,setPlayer1Turn] = useState(true);
@@ -135,8 +135,6 @@ function GameBoard() {
   }
 
   function updateCanvasWithLastPlay(lastPlay:any) {
-    setCurrentTurn(lastPlay.turn);
-
     //TODO Remover player1id da resposta
     //let player1Id:number = Number(lastPlay.player1Id);
 
@@ -145,18 +143,10 @@ function GameBoard() {
       lastPlay.lastPlay.endPoint
     );
 
-    const canvasCtx:any = getCanvasCtx();
     let myTurn:boolean = Number(lastPlay.turn)===Number(myPlayerId)? true : false;
     let iAmPlayer1:boolean = (Number(myPlayerId)===Number(player1Id))? true : false;
 
-    if (myTurn) { // Received other player play message
-      console.log('GAMEUPDATE - Its my turn to play');
-      let playColor:string = (iAmPlayer1)? player2Color: player1Color;
-      updateCanvas(canvasCtx, screenEdge, playColor); 
-    } else { // Received my own play message
-      let playColor:string = (iAmPlayer1)? player1Color: player2Color;
-      updateCanvas(canvasCtx, screenEdge, playColor); 
-    }
+    updateCanvas(myTurn, iAmPlayer1, screenEdge); 
 
     updateScore(lastPlay.score_player1,lastPlay.score_player2);
 
@@ -183,7 +173,19 @@ function GameBoard() {
           //console.log("Register: Invalid room pass =" + response.looser.roomPass);
         }
       }
+    } else {
+      setCurrentTurn(lastPlay.turn);
     }
+  }
+
+  function updateCanvas(myTurn: boolean, iAmPlayer1: boolean, screenEdge: { x1: number; y1: number; x2: number; y2: number; }) {
+    let playColor: string;
+    if (myTurn) { // Received other player play message
+      playColor = (iAmPlayer1) ? player2Color : player1Color;
+    } else { // Received my own play message
+      playColor = (iAmPlayer1) ? player1Color : player2Color;
+    }
+    drawEdge(getCanvasCtx(), screenEdge, playColor);
   }
 
   function connectSocket() {
@@ -286,7 +288,7 @@ function GameBoard() {
     });
   }
 
-  function updateCanvas(canvasCtx:any,edge:Edge, color: string) {
+  function drawEdge(canvasCtx:any,edge:Edge, color: string) {
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
     canvasCtx.strokeStyle = color;
@@ -512,7 +514,6 @@ function GameBoard() {
         ctx.stroke();
       }
     } 
-    console.log('DRAWGRID - gridcolumns=' + gridColumns.length);
   }
 
 
@@ -525,16 +526,21 @@ function GameBoard() {
   // Fetch game setup and prepare canvas
   useEffect(() => {
     console.log('EFFECT - Fetching game setup');
-    if (socketConnected) fetchGameInfo();
+    if (socketConnected) {
+      fetchGameInfo();
+      console.log('--- Fetching game setup executed');
+    }
   },[socketConnected]);
 
 
   // Bot call api when is its turn
   useEffect(()=>{
-    console.log('EFFECT - Sendbot played');
+    console.log('EFFECT - Sendbot play');
+    console.log('boardReady=' + boardReady + ' currentTurn=' + currentTurn);
+    console.log('convert=' + Number(''));
     if ((boardReady)&&(Number(currentTurn)===0)) {
-      console.log('--- senBotPlay was called');
       sendBotPlay();
+      console.log('--- Sendbot play executed');
     }
   },[boardReady,currentTurn]);
 
@@ -542,7 +548,10 @@ function GameBoard() {
   // Update canvas with last play
   useEffect(() => {
     console.log('EFFECT - canvas update for last play');
-    if ((boardReady)&&(lastPlay!==null)) updateCanvasWithLastPlay(lastPlay);
+    if ((boardReady)&&(lastPlay!==null)) {
+      updateCanvasWithLastPlay(lastPlay);
+      console.log('--- Executed');
+    }
   },[lastPlay]);
 
 
