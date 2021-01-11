@@ -7,6 +7,7 @@ import Score from '../../component/Score/Score';
 
 import './GameBoard.css';
 import { render } from 'react-dom';
+import { toEditorSettings } from 'typescript';
 
 interface GameBoardParams {
   playerId: string;
@@ -29,6 +30,10 @@ function GameBoard() {
 
   const history = useHistory();
 
+  const [socketConnected,setSocketConnected] = useState(false);
+  const [setupFetched,setSetupFetched] = useState(false);
+  const [boardReady,setBoardReady] = useState(false);
+
   const [player1Id,setPlayer1Id] = useState('');
   const [player1Name,setPlayer1Name] = useState('');
   const [player1Score,setPlayer1Score] = useState('0');
@@ -37,6 +42,11 @@ function GameBoard() {
   const [player2Name,setPlayer2Name] = useState('');
   const [player2Score,setPlayer2Score] = useState('0');
 
+  const [lastPlay,setLastPlay] = useState(null);
+
+  let gridSize:number = 1;
+  const [gridColumns,setGridColumns] = useState<any[]>([]);
+  const [gridRows,setGridRows] = useState<any[]>([]);
   const canvasRef = useRef(null);
   const player1Color = "#0077c2";
   const player2Color = "#790e8b";
@@ -50,35 +60,27 @@ function GameBoard() {
    * REST Stuff
    */
   function fetchGameInfo() {
-    api.get("gameinfo").then(response => {
-      console.log('FetchGameInfo rawTurn=' + response.data.turn);
-      setPlayer1Id(response.data.player1Id);
-      setCurrentTurn(response.data.turn);
-      setPlayer1Name(response.data.player1);
-      setPlayer2Name(response.data.player2);
+    api
+      .get("gameinfo")
+      .then(response => {
+        console.log('FetchGameInfo');
+
+        gridSize=response.data.gridsize;
+        setCurrentTurn(response.data.turn);
+        setPlayer1Id(response.data.player1Id);
+        setPlayer1Name(response.data.player1);
+        setPlayer2Name(response.data.player2);
+
+        setSetupFetched(true);
+
+        prepareCanvas();
     })
   }
 
   function sendBotPlay() {
     try {
-      api.post(
-        "botplay"
-        ).then(response => {
-        const responseData = response.data;
-        // Get edge selected
-        let {x:gridX1,y:gridY1} = responseData.lastPlay.initialPoint;
-        let {x:gridX2,y:gridY2} = responseData.lastPlay.endPoint;
-        let gridEdge = {
-          x1: gridX1,
-          y1: gridY1,
-          x2: gridX2,
-          y2: gridY2
-        };
-        const screenEdge = convertGridToScreen(gridEdge);
-        // Paint selected edge to update gameboard
-        // Bot is always player1
-        updateCanvas(getCanvasCtx(), screenEdge, player1Color);
-      });
+      console.log('SENDBOTPLAY');
+      api.post("botplay");
     } catch (error) {
       console.log(error.response);
       console.log(error.request);
@@ -100,13 +102,6 @@ function GameBoard() {
         'x2': gridEdge.x2,
         'y2': gridEdge.y2,
         'player': myPlayerId,
-      }).then(response => {
-        const responseData = response.data;
-        if (Number(myPlayerId)===Number(responseData.player1Id)) {
-          updateCanvas(getCanvasCtx(), screenEdge, player1Color);
-        } else {
-          updateCanvas(getCanvasCtx(), screenEdge, player2Color);
-        }
       });
     } catch (error) {
       console.log(error.response);
@@ -123,77 +118,89 @@ function GameBoard() {
    */
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3333';
 
+
+  function createScreenFromGridPoint(p1:any,p2:any) {
+    console.log(p1);
+    console.log(p2);
+    let {x:gridX1,y:gridY1} = p1;
+    let {x:gridX2,y:gridY2} = p2;
+    let gridEdge = {
+      x1: gridX1,
+      y1: gridY1,
+      x2: gridX2,
+      y2: gridY2
+    };
+    console.log(gridEdge);
+    return convertGridToScreen(gridEdge);
+  }
+
+  function updateCanvasWithLastPlay(lastPlay:any) {
+    setCurrentTurn(lastPlay.turn);
+
+    //TODO Remover player1id da resposta
+    //let player1Id:number = Number(lastPlay.player1Id);
+
+    const screenEdge = createScreenFromGridPoint(
+      lastPlay.lastPlay.initialPoint, 
+      lastPlay.lastPlay.endPoint
+    );
+
+    const canvasCtx:any = getCanvasCtx();
+    let myTurn:boolean = Number(lastPlay.turn)===Number(myPlayerId)? true : false;
+    let iAmPlayer1:boolean = (Number(myPlayerId)===Number(player1Id))? true : false;
+
+    if (myTurn) { // Received other player play message
+      console.log('GAMEUPDATE - Its my turn to play');
+      let playColor:string = (iAmPlayer1)? player2Color: player1Color;
+      updateCanvas(canvasCtx, screenEdge, playColor); 
+    } else { // Received my own play message
+      let playColor:string = (iAmPlayer1)? player1Color: player2Color;
+      updateCanvas(canvasCtx, screenEdge, playColor); 
+    }
+
+    updateScore(lastPlay.score_player1,lastPlay.score_player2);
+
+    //TODO Refactor for god sake!!!
+    if (lastPlay.gameOver==true) {
+      showGameOverMessage(lastPlay.message);
+      //socket.disconnect();
+      if (Number(lastPlay.whatsNext.winner.playerId)==Number(myPlayerId)) {
+        if (lastPlay.whatsNext.winner.roomPass==='WaitingRoom') {
+          history.push("/waitingRoom/" + myPlayerId);
+        } else if (lastPlay.whatsNext.winner.roomPass==="GameRoom") {
+          window.location.reload();
+        } else {
+          //console.log("Register: Invalid room pass =" + response.winner.roomPass);
+        }
+      } else {
+        if (lastPlay.whatsNext.looser.roomPass==='WaitingRoom') {
+          history.push("/waitingRoom/" + myPlayerId);
+        } else if (lastPlay.whatsNext.looser.roomPass==="GameRoom") {
+          window.location.reload();
+        } else if (lastPlay.whatsNext.looser.roomPass==="RegisterRoom") {
+          history.push("/");
+        } else {
+          //console.log("Register: Invalid room pass =" + response.looser.roomPass);
+        }
+      }
+    }
+  }
+
   function connectSocket() {
     const socket = socketIo(API_URL);
+
     socket.on('connect', () => {
-      console.log('Client connected');
+      console.log('CONNECT event arrived');
+      setSocketConnected(true);
     });
 
     socket.on('gameUpdate', (response:any) => {
       console.log('GAMEUPDATE event arrived');
-
-      const canvasCtx:any = getCanvasCtx();
-
-      let player1Id:number = Number(response.player1Id);
-
-      let {x:gridX1,y:gridY1} = response.lastPlay.initialPoint;
-      let {x:gridX2,y:gridY2} = response.lastPlay.endPoint;
-      let gridEdge = {
-        x1: gridX1,
-        y1: gridY1,
-        x2: gridX2,
-        y2: gridY2
-      };
-      const screenEdge = convertGridToScreen(gridEdge);
-      console.log('GAMEUPDATE - turn=' + response.turn);
-      setCurrentTurn(response.turn);
-      let myTurn:boolean = Number(response.turn)===Number(myPlayerId)? true : false;
-      if (myTurn) { // Received other player play message
-        console.log('GAMEUPDATE - Its my turn to play');
-        if (Number(myPlayerId)===player1Id) {
-          updateCanvas(canvasCtx, screenEdge, player2Color);
-        } else {
-          updateCanvas(canvasCtx, screenEdge, player1Color);
-        }        
-      } else { // Received my own play message
-        console.log('GAMEUPDATE - Its *NOT* my turn to play');
-        if (Number(myPlayerId)===player1Id) {
-          updateCanvas(canvasCtx, screenEdge, player1Color);
-        } else {
-          updateCanvas(canvasCtx, screenEdge, player2Color);
-        }
-      }
-      updateScore(response.score_player1,response.score_player2);
-
-      //TODO Refactor for god sake!!!
-      if (response.gameOver==true) {
-        showGameOverMessage(response.message);
-        socket.disconnect();
-        if (Number(response.whatsNext.winner.playerId)==Number(myPlayerId)) {
-          if (response.whatsNext.winner.roomPass==='WaitingRoom') {
-            history.push("/waitingRoom/" + myPlayerId);
-          } else if (response.whatsNext.winner.roomPass==="GameRoom") {
-            window.location.reload();
-          } else {
-            //console.log("Register: Invalid room pass =" + response.winner.roomPass);
-          }
-        } else {
-          if (response.whatsNext.looser.roomPass==='WaitingRoom') {
-            history.push("/waitingRoom/" + myPlayerId);
-          } else if (response.whatsNext.looser.roomPass==="GameRoom") {
-            window.location.reload();
-          } else if (response.whatsNext.looser.roomPass==="RegisterRoom") {
-            history.push("/");
-          } else {
-            //console.log("Register: Invalid room pass =" + response.looser.roomPass);
-          }
-        }
-      }
+      setLastPlay(response);
     });
 
     // CLEAN UP THE EFFECT
     return () => socket.disconnect();
-    //
   }
   /**
    * ==========================================================
@@ -205,7 +212,6 @@ function GameBoard() {
     */
   const canvasWidth = 400;
   const canvasHeight = 300;
-  const gridSize = 4;
   const minX = 10;
   const minY = 10;
   const PADDING = 10;
@@ -213,8 +219,6 @@ function GameBoard() {
   const maxY = canvasHeight-PADDING;
   const boardWidth = canvasWidth-(2*PADDING);
   const boardHeight = canvasHeight-(2*PADDING);
-  const gridXSpace = boardWidth/(gridSize-1);
-  const gridYSpace = boardHeight/(gridSize-1);
 
   function getCanvasObj() {
     return canvasRef.current;
@@ -223,6 +227,15 @@ function GameBoard() {
   function getCanvasCtx() {
     const canvasObj:any = getCanvasObj();
     return canvasObj.getContext("2d");
+  }
+
+  function prepareCanvas() {
+    const canvasCtx = getCanvasCtx();    
+    drawGrid(canvasCtx);
+    installMouseMoveListener();
+    installMouseClickListener();
+
+    setBoardReady(true);
   }
 
   function getPos(canvasObj:any, x:number, y:number) {
@@ -268,13 +281,12 @@ function GameBoard() {
   function uninstallMouseClickListener() {
     const canvasObj:any = getCanvasObj();
     canvasObj.addEventListener('click', (e:MouseEvent) => {
+      console.log('UNINSTALL MOUSECLICK LISTENER');
       return; // Do nothing
     });
   }
 
   function updateCanvas(canvasCtx:any,edge:Edge, color: string) {
-    //console.log('UPDATECANVAS');
-    //console.log(edge);
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
     canvasCtx.strokeStyle = color;
@@ -283,8 +295,6 @@ function GameBoard() {
     canvasCtx.stroke();
   }
 
-  const gridColumns:any[] = [];
-  const gridRows:any[] = [];
   const TOLERANCE:number = 0.001;
 
   function isEqual(n1:number,n2:number) {
@@ -364,8 +374,11 @@ function GameBoard() {
   }
 
   function findScreenColumn(gridX:number) {
+    console.log('FINDSCREENCOLUMN');
     let screenX:number = -1;
+    console.log('--- gridcolumns size=' + gridColumns.length);
     gridColumns.forEach((columnItem,index) => {
+      console.log('--- testing gridX=' + gridX + ' columnItem=' + columnItem);
       if (index===gridX) {
         screenX=columnItem.column;
         return;
@@ -486,6 +499,9 @@ function GameBoard() {
   * @param ctx Canvas context
   */
   function drawGrid(ctx:any){
+    const gridXSpace = boardWidth/(gridSize-1);
+    const gridYSpace = boardHeight/(gridSize-1);
+  
     for (let x = minX; Math.trunc(x) <= maxX; x=x+gridXSpace) {
       for (let y = minY; y <= maxY; y=y+gridYSpace) {
         storeGridInfo(x,y);
@@ -496,37 +512,39 @@ function GameBoard() {
         ctx.stroke();
       }
     } 
+    console.log('DRAWGRID - gridcolumns=' + gridColumns.length);
   }
 
-  useEffect(()=>{
-    console.log('current turn updated');
-    // Determine if it´s player 1 turn
-    let isPlayer1Turn:boolean = (Number(player1Id)===Number(currentTurn))? true: false;
-    setPlayer1Turn(isPlayer1Turn);
-    if ((isPlayer1Turn===true)&&(Number(player1Id)===0)) {
-        console.log('curr turn=' + currentTurn + ' player1=' + player1Id);
-        sendBotPlay();
-    }
-    // Determine if it´s myturn
-    let myTurn:boolean = Number(currentTurn)===Number(myPlayerId)? true : false;
-    setMyTurn(myTurn);
-  },[currentTurn]);
 
-  /**
-   * Use the useEffect hook with an empty dependency array for 
-   * loading your function when the component mounts.
-   * If you don't pass any variable to the dependency array, 
-   * it will only get called on the first render exactly like 
-   * componentDidMount.
-   */
+  // Connect to server by socket.io
   useEffect(() => {
-    const canvasCtx = getCanvasCtx();
+    console.log('EFFECT - Connecting socket.io');
     connectSocket();
-    fetchGameInfo();
-    drawGrid(canvasCtx);
-    installMouseMoveListener();
-    installMouseClickListener();
   },[]);
+
+  // Fetch game setup and prepare canvas
+  useEffect(() => {
+    console.log('EFFECT - Fetching game setup');
+    if (socketConnected) fetchGameInfo();
+  },[socketConnected]);
+
+
+  // Bot call api when is its turn
+  useEffect(()=>{
+    console.log('EFFECT - Sendbot played');
+    if ((boardReady)&&(Number(currentTurn)===0)) {
+      console.log('--- senBotPlay was called');
+      sendBotPlay();
+    }
+  },[boardReady,currentTurn]);
+
+
+  // Update canvas with last play
+  useEffect(() => {
+    console.log('EFFECT - canvas update for last play');
+    if ((boardReady)&&(lastPlay!==null)) updateCanvasWithLastPlay(lastPlay);
+  },[lastPlay]);
+
 
   /**
    * Normally in React you don’t need a ref to update something, 
@@ -539,6 +557,7 @@ function GameBoard() {
    */
   return (
     <div>
+      {console.log('Render')}
       <header>
         <h1>Territory</h1>
       </header>
@@ -561,14 +580,14 @@ function GameBoard() {
               // anything wrapped in " or ' would be sent as a string. 
               // If you want to keep the value type, such as an integer, 
               // float, boolean, object, etc, you would need to wrap it in {}
-              blink={player1turn} 
+              blink={(currentTurn===player1Id)} 
             ></Score>
             <Score
               title="Player 2"
               className="player2-title"
               playerName={player2Name}
               playerScore={player2Score}
-              blink={!player1turn}
+              blink={(currentTurn!==player1Id)}
             ></Score>
           </div>
         </div>
