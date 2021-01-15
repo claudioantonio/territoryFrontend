@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
@@ -25,8 +25,6 @@ interface GameBoardParams {
 function GameBoard() {
   let { playerId } = useParams<GameBoardParams>();
   const myPlayerId = playerId;
-
-  const history = useHistory();
 
   const [socketConnected, setSocketConnected] = useState(false);
 

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import api from "../../service/api";
+import React from "react";
 
 import './Waiting-Room.css';
 

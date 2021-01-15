@@ -74,14 +74,14 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
       const y = e.clientY;
       const pos = getPos(canvasObj, x, y);
 
-      const columnItem = reachColumn(canvasObj, pos.x)
+      const columnItem = reachColumn(pos.x)
       if (columnItem != null) {
         let screenEdge=findAdjacentYPoints(columnItem, pos.y);
         if (screenEdge!=null) onClick(convertScreenToGrid(screenEdge));
         return;
       }
 
-      const rowItem = reachRow(canvasObj, pos.y)
+      const rowItem = reachRow(pos.y)
       if (rowItem != null) {
         let screenEdge=findAdjacentXPoints(rowItem, pos.x)
         if (screenEdge!=null) onClick(convertScreenToGrid(screenEdge));
@@ -267,10 +267,9 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
   /**
  * Check if click reached a horizontal edge and return this edge
  * 
- * @param canvasObj Canvas
  * @param y y position for the click
  */
-  function reachRow(canvasObj: any, y: number) {
+  function reachRow(y: number) {
     for (let i = 0; i < gridRows.length; i++) {
       const rowItem = gridRows[i];
       if (Math.abs(rowItem.row - y) < PROXIMITY_TOLERANCE) {
@@ -283,11 +282,9 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
   /**
    * Check if click reached a vertical edge and return this edge
    * 
-   * @param canvasObj Canvas
    * @param x x position for the click
-   * @param y y position for the click
    */
-  function reachColumn(canvasObj: any, x: number) {
+  function reachColumn(x: number) {
     for (let i = 0; i < gridColumns.length; i++) {
       let columnItem = gridColumns[i];
       if (Math.abs(columnItem.column - x) < PROXIMITY_TOLERANCE) {
@@ -330,16 +327,6 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
     };
     console.log(gridEdge);
     return convertGridToScreen(gridEdge);
-  }
-
-  function updateCanvas(myTurn: boolean, iAmPlayer1: boolean, screenEdge: { x1: number; y1: number; x2: number; y2: number; }) {
-    let playColor: string = "#000";
-    // if (myTurn) { // Received other player play message
-    //     playColor = (iAmPlayer1) ? player2Color : player1Color;
-    // } else { // Received my own play message
-    //     playColor = (iAmPlayer1) ? player1Color : player2Color;
-    // }
-    drawEdge(getCanvasCtx(), screenEdge, playColor);
   }
 
   function drawMoves(ctx: any) {
