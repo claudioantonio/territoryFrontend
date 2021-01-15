@@ -1,13 +1,13 @@
 import React from "react";
 
-import './Waiting-Room.css';
+import './WaitingRoom.css';
 
 interface WaitingRoomProps {
     line: any[];
 }
 
 
-const Waiting_Room: React.FC<WaitingRoomProps> = (props) => {
+const WaitingRoom: React.FC<WaitingRoomProps> = (props) => {
     const waitingList = props.line;
 
     function renderWaitingList() {
@@ -26,4 +26,4 @@ const Waiting_Room: React.FC<WaitingRoomProps> = (props) => {
         </div>
     );
 }
-export default Waiting_Room;
+export default WaitingRoom;

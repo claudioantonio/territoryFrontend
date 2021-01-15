@@ -17,7 +17,7 @@ interface GameBoardProps {
  * Component to render the game board and allow user interaction
  * @param props see GameBoardProps interface definition
  */
-const Game_Board: React.FC<GameBoardProps> = (props) => {
+const GameBoard: React.FC<GameBoardProps> = (props) => {
   const canvasRef = useRef(null);
 
   const gridSize: number = props.gridsize;
@@ -37,8 +37,8 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
   const minX = 10;
   const minY = 10;
 
-  const [gridColumns, setGridColumns] = useState<any[]>([]);
-  const [gridRows, setGridRows] = useState<any[]>([]);
+  const gridColumns:any[] = [];
+  const gridRows:any[] = [];
 
 
   function getCanvasObj() {
@@ -342,4 +342,4 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
   );
 };
 
-export default Game_Board;
+export default GameBoard;

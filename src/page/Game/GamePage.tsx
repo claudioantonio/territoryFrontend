@@ -4,16 +4,16 @@ import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
 import Score from '../../component/Score/Score';
-import Waiting_Room from '../../component/Waiting-Room/Waiting-Room';
-import Game_Board from '../../component/Board/GameBoard';
+import WaitingRoom from '../../component/Waiting-Room/WaitingRoom';
+import GameBoard from '../../component/Board/GameBoard';
 
 import Edge from '../../logic/Edge';
 import PlayData from '../../logic/PlayData';
 
-import './GameBoard.css';
+import './GamePage.css';
 
 
-interface GameBoardParams {
+interface GamePageParams {
   playerId: string;
 }
 
@@ -22,8 +22,8 @@ interface GameBoardParams {
  * GameBoard page
  * Presents the grid where players will interact
  */
-function GameBoard() {
-  let { playerId } = useParams<GameBoardParams>();
+function GamePage() {
+  let { playerId } = useParams<GamePageParams>();
   const myPlayerId = playerId;
 
   const [socketConnected, setSocketConnected] = useState(false);
@@ -65,7 +65,7 @@ function GameBoard() {
   }
 
   function sendBotPlay() {
-    if (Number(currentTurn) != 0) return;
+    if (Number(currentTurn) !== 0) return;
     try {
       console.log('SENDBOTPLAY');
       api.post("botplay");
@@ -215,20 +215,20 @@ function GameBoard() {
       </header>
       <main className="main-container">
         <div className="waiting-room">
-          <Waiting_Room
+          <WaitingRoom
             line={waitingList}
-          ></Waiting_Room>
+          ></WaitingRoom>
         </div>
 
         <div className="game-room">
           {gridSize > 0 &&
-            <Game_Board
+            <GameBoard
               gridsize={gridSize}
               width="400"
               height="300"
               data={gameData}
               onClick={sendPlay}
-            ></Game_Board>
+            ></GameBoard>
           }
           <div className="score-container">
             <Score
@@ -256,4 +256,4 @@ function GameBoard() {
   );
 }
 
-export default GameBoard;
+export default GamePage;
