@@ -1,0 +1,14 @@
+.waitinglist-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+
+    align-items: flex-start;
+    
+    padding-right: 5rem;
+}
+
+.waitinglist-container h3 {
+    border-bottom: solid;
+    margin: 0;
+}

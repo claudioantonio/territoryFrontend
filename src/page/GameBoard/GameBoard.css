@@ -1,8 +1,21 @@
 .main-container {
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    align-items: flex-start;
 }
+
+.waiting-room {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.game-room {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
 .score-container {
     display: flex;
     flex-direction: row;

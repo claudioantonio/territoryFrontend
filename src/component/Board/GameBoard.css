@@ -1,0 +1,15 @@
+.board-container {
+    display: flex;
+    flex-direction: column;
+    justify-content:center;
+    align-content: center;
+}
+
+.move-instruction {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    margin:0;
+    font-size: 1rem;
+}
