@@ -90,14 +90,6 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
     }, false);
   }
 
-  function uninstallMouseClickListener() {
-    const canvasObj: any = getCanvasObj();
-    canvasObj.addEventListener('click', (e: MouseEvent) => {
-      console.log('UNINSTALL MOUSECLICK LISTENER');
-      return; // Do nothing
-    });
-  }
-
   function drawEdge(canvasCtx: any, edge: Edge, color: string) {
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
@@ -312,21 +304,6 @@ const Game_Board: React.FC<GameBoardProps> = (props) => {
         ctx.stroke();
       }
     }
-  }
-
-  function createScreenFromGridPoint(p1: any, p2: any) {
-    console.log(p1);
-    console.log(p2);
-    let { x: gridX1, y: gridY1 } = p1;
-    let { x: gridX2, y: gridY2 } = p2;
-    let gridEdge = {
-      x1: gridX1,
-      y1: gridY1,
-      x2: gridX2,
-      y2: gridY2
-    };
-    console.log(gridEdge);
-    return convertGridToScreen(gridEdge);
   }
 
   function drawMoves(ctx: any) {
