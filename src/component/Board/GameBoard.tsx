@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Edge from '../../logic/Edge';
 import PlayData from '../../logic/PlayData';
 
@@ -37,8 +37,8 @@ const GameBoard: React.FC<GameBoardProps> = (props) => {
   const minX = 10;
   const minY = 10;
 
-  const gridColumns:any[] = [];
-  const gridRows:any[] = [];
+  const [gridColumns, setGridColumns] = useState<any[]>([]);
+  const [gridRows, setGridRows] = useState<any[]>([]);
 
 
   function getCanvasObj() {
@@ -70,6 +70,7 @@ const GameBoard: React.FC<GameBoardProps> = (props) => {
   function installMouseClickListener() {
     const canvasObj: any = getCanvasObj();
     canvasObj.addEventListener('click', (e: MouseEvent) => {
+      console.log('Mouse clicked');
       const x = e.clientX;
       const y = e.clientY;
       const pos = getPos(canvasObj, x, y);
@@ -91,6 +92,7 @@ const GameBoard: React.FC<GameBoardProps> = (props) => {
   }
 
   function drawEdge(canvasCtx: any, edge: Edge, color: string) {
+    console.log('Drawing edge ', edge.x1, edge.y1, edge.x2, edge.y2);
     canvasCtx.beginPath();
     canvasCtx.lineWidth = "4"; // TODO: Remover número mágico
     canvasCtx.strokeStyle = color;
@@ -277,6 +279,8 @@ const GameBoard: React.FC<GameBoardProps> = (props) => {
    * @param x x position for the click
    */
   function reachColumn(x: number) {
+    console.log('Reached column with x=', x);
+    console.log(gridColumns);
     for (let i = 0; i < gridColumns.length; i++) {
       let columnItem = gridColumns[i];
       if (Math.abs(columnItem.column - x) < PROXIMITY_TOLERANCE) {
