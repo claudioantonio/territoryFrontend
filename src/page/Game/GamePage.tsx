@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import api from '../../service/api';
 import socketIo from 'socket.io-client';
 
@@ -25,6 +25,8 @@ interface GamePageParams {
 function GamePage() {
   let { playerId } = useParams<GamePageParams>();
   const myPlayerId = playerId;
+
+  const history = useHistory();
 
   const [socketConnected, setSocketConnected] = useState(false);
 
@@ -123,6 +125,12 @@ function GamePage() {
       setWaitingList(response.waitingList);
     });
 
+    socket.on('emptyGameRoom', (response:any) => {
+      console.log('EMPTYGAMEROOM event arrived');
+      socket.disconnect();
+      history.push("/");
+    });
+
     // CLEAN UP THE EFFECT
     return () => socket.disconnect();
   }
@@ -135,6 +143,8 @@ function GamePage() {
    *  Controller Stuff
    */
   function updateGamePlay(lastPlay: any) {
+    console.log('updateGamePlay called');
+    console.log(lastPlay);
     updateGameData(lastPlay);
     updateScore(lastPlay.score_player1, lastPlay.score_player2);
     if (lastPlay.gameOver === true) {
